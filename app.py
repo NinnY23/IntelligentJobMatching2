@@ -605,6 +605,41 @@ def get_job_matches():
     return jsonify(results), 200
 
 
+@app.route('/api/job-posts/<int:job_id>', methods=['PUT'])
+@require_role('employer')
+def update_job_post(employer, job_id):
+    """Employer edits their own job posting."""
+    job = Job.query.filter_by(id=job_id, employer_id=employer.id).first()
+    if not job:
+        return jsonify({"message": "Job not found"}), 404
+
+    data = request.get_json()
+    updatable_fields = [
+        'position', 'company', 'location', 'description',
+        'required_skills', 'preferred_skills',
+        'salary_min', 'salary_max', 'job_type', 'openings', 'deadline'
+    ]
+    for field in updatable_fields:
+        if field in data:
+            setattr(job, field, data[field])
+
+    db.session.commit()
+    return jsonify({"message": "Job updated", "job": job.to_dict()}), 200
+
+
+@app.route('/api/job-posts/<int:job_id>', methods=['DELETE'])
+@require_role('employer')
+def delete_job_post(employer, job_id):
+    """Employer deletes their own job posting (cascades to applications)."""
+    job = Job.query.filter_by(id=job_id, employer_id=employer.id).first()
+    if not job:
+        return jsonify({"message": "Job not found"}), 404
+
+    db.session.delete(job)
+    db.session.commit()
+    return jsonify({"message": "Job deleted"}), 200
+
+
 @app.route('/api/job-posts/<int:job_id>/candidates', methods=['GET'])
 @require_role('employer')
 def get_job_candidates(employer, job_id):
