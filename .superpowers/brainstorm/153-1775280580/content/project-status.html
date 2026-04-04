@@ -1,0 +1,51 @@
+<h2>Intelligent Job Matching — Project Status</h2>
+<p class="subtitle">Here's what the codebase has vs. what the spec requires</p>
+
+<div class="section">
+  <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 24px;">
+    <div style="background: #f0fdf4; border: 1px solid #86efac; border-radius: 10px; padding: 20px;">
+      <h3 style="color: #16a34a; margin-top:0;">✅ Already Implemented</h3>
+      <ul style="margin:0; padding-left:18px; line-height:2;">
+        <li>User signup / login (token-based)</li>
+        <li>Role-based access (employer / employee)</li>
+        <li>Profile creation &amp; editing</li>
+        <li>Resume PDF upload &amp; text parsing</li>
+        <li>Skill extraction from resume</li>
+        <li>Create job postings (employer)</li>
+        <li>Matching algorithm (Python, server-side)</li>
+        <li>Candidate ranking endpoint</li>
+        <li>SQLite database with SQLAlchemy ORM</li>
+      </ul>
+    </div>
+    <div style="background: #fef2f2; border: 1px solid #fca5a5; border-radius: 10px; padding: 20px;">
+      <h3 style="color: #dc2626; margin-top:0;">❌ Required but Missing</h3>
+      <ul style="margin:0; padding-left:18px; line-height:2;">
+        <li>Job listings page (hardcoded, not from API)</li>
+        <li>Ranked match results shown to job seeker</li>
+        <li>Skill gap display in frontend</li>
+        <li>Apply for job (real submission)</li>
+        <li>Edit / Delete job postings</li>
+        <li>Employer: view applications &amp; shortlist</li>
+        <li>In-app messaging (job seeker ↔ employer)</li>
+        <li>JWT authentication (spec requires it)</li>
+        <li>Prolog reasoning engine (spec requires it)</li>
+      </ul>
+    </div>
+  </div>
+</div>
+
+<div class="section" style="background:#fefce8; border:1px solid #fde047; border-radius:10px; padding:16px 20px; margin-top:16px;">
+  <h3 style="color:#854d0e; margin-top:0;">⚠️ Repo Cleanup Needed</h3>
+  <ul style="margin:0; padding-left:18px; line-height:2; columns: 2;">
+    <li><code>backend/</code> folder — old in-memory version</li>
+    <li><code>jobs.py</code>, <code>matcher.py</code> at root — unused</li>
+    <li><code>interpreter.py</code> — unused</li>
+    <li>Hardcoded jobs in <code>JobMatch.jsx</code></li>
+    <li>DB credentials hardcoded in <code>app.py</code></li>
+    <li>Debug endpoints exposed</li>
+    <li>Plaintext passwords</li>
+    <li><code>api.js</code> endpoint mismatch (<code>/api/jobs</code> vs <code>/api/job-posts</code>)</li>
+  </ul>
+</div>
+
+<p class="subtitle" style="margin-top:20px;">Continuing in terminal — I'll ask you a few quick questions before we design anything.</p>
