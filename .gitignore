@@ -1,0 +1,20 @@
+# Environment secrets
+.env
+
+# Legacy SQLite database
+database.db
+
+# Uploaded resume files
+uploads/
+
+# Python cache
+__pycache__/
+*.pyc
+*.pyo
+
+# Node
+node_modules/
+frontend/dist/
+
+# Superpowers brainstorm artifacts
+.superpowers/
