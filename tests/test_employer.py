@@ -261,3 +261,76 @@ def test_employer_cannot_change_status_of_other_employers_application(
         headers={'Authorization': f'Bearer {token4}'}
     )
     assert res.status_code == 403
+
+
+# ── GET /api/employer/dashboard ────────────────────────────────────────────
+
+def test_dashboard_returns_stats(client, employer_token, sample_job):
+    res = client.get('/api/employer/dashboard',
+                     headers={'Authorization': f'Bearer {employer_token}'})
+    assert res.status_code == 200
+    data = res.get_json()
+    for key in ('total_jobs', 'total_applicants', 'total_shortlisted', 'recent_applications'):
+        assert key in data, f"Missing key: {key}"
+
+
+def test_dashboard_counts_jobs(client, employer_token, sample_job):
+    res = client.get('/api/employer/dashboard',
+                     headers={'Authorization': f'Bearer {employer_token}'})
+    assert res.get_json()['total_jobs'] == 1
+
+
+def test_dashboard_counts_applicants(client, employer_token, seeker_token, sample_job):
+    client.post(f'/api/jobs/{sample_job["id"]}/apply',
+                headers={'Authorization': f'Bearer {seeker_token}'})
+    res = client.get('/api/employer/dashboard',
+                     headers={'Authorization': f'Bearer {employer_token}'})
+    assert res.get_json()['total_applicants'] == 1
+
+
+def test_dashboard_counts_shortlisted(client, employer_token, seeker_token, sample_job):
+    apply_res = client.post(
+        f'/api/jobs/{sample_job["id"]}/apply',
+        headers={'Authorization': f'Bearer {seeker_token}'}
+    )
+    app_id = apply_res.get_json()['application']['id']
+    client.patch(f'/api/applications/{app_id}/status',
+                 json={'status': 'shortlisted'},
+                 headers={'Authorization': f'Bearer {employer_token}'})
+
+    res = client.get('/api/employer/dashboard',
+                     headers={'Authorization': f'Bearer {employer_token}'})
+    assert res.get_json()['total_shortlisted'] == 1
+
+
+def test_dashboard_recent_applications_structure(client, employer_token, seeker_token, sample_job):
+    client.post(f'/api/jobs/{sample_job["id"]}/apply',
+                headers={'Authorization': f'Bearer {seeker_token}'})
+    res = client.get('/api/employer/dashboard',
+                     headers={'Authorization': f'Bearer {employer_token}'})
+    recent = res.get_json()['recent_applications']
+    assert len(recent) == 1
+    for key in ('applicant_name', 'job_position', 'applied_at', 'status'):
+        assert key in recent[0], f"Missing key in recent_applications: {key}"
+
+
+def test_dashboard_requires_employer_role(client, seeker_token):
+    res = client.get('/api/employer/dashboard',
+                     headers={'Authorization': f'Bearer {seeker_token}'})
+    assert res.status_code == 403
+
+
+def test_dashboard_empty_for_new_employer(client):
+    client.post('/api/signup', json={
+        'email': 'fresh@t.com', 'password': 'p',
+        'name': 'Fresh', 'role': 'employer'
+    })
+    r = client.post('/api/login', json={'email': 'fresh@t.com', 'password': 'p'})
+    token = r.get_json()['token']
+    res = client.get('/api/employer/dashboard',
+                     headers={'Authorization': f'Bearer {token}'})
+    data = res.get_json()
+    assert data['total_jobs'] == 0
+    assert data['total_applicants'] == 0
+    assert data['total_shortlisted'] == 0
+    assert data['recent_applications'] == []

@@ -897,6 +897,57 @@ def update_application_status(employer, app_id):
     return jsonify({"message": "Status updated", "application": application.to_dict()}), 200
 
 
+@app.route('/api/employer/dashboard', methods=['GET'])
+@require_role('employer')
+def employer_dashboard(employer):
+    """Aggregate stats for the employer's dashboard."""
+    jobs = Job.query.filter_by(employer_id=employer.id).all()
+    total_jobs = len(jobs)
+    job_ids = [j.id for j in jobs]
+
+    # Count total applicants from Application records (reliable counter)
+    total_applicants = (
+        Application.query.filter(Application.job_id.in_(job_ids)).count()
+        if job_ids else 0
+    )
+
+    total_shortlisted = (
+        Application.query.filter(
+            Application.job_id.in_(job_ids),
+            Application.status == 'shortlisted'
+        ).count()
+        if job_ids else 0
+    )
+
+    recent_apps = (
+        Application.query
+        .filter(Application.job_id.in_(job_ids))
+        .order_by(Application.created_at.desc())
+        .limit(5)
+        .all()
+        if job_ids else []
+    )
+
+    recent = []
+    for a in recent_apps:
+        applicant = User.query.get(a.user_id)
+        job = Job.query.get(a.job_id)
+        if applicant and job:
+            recent.append({
+                'applicant_name': applicant.name,
+                'job_position': job.position,
+                'applied_at': a.created_at.isoformat(),
+                'status': a.status,
+            })
+
+    return jsonify({
+        'total_jobs': total_jobs,
+        'total_applicants': total_applicants,
+        'total_shortlisted': total_shortlisted,
+        'recent_applications': recent,
+    }), 200
+
+
 if __name__ == "__main__":
     with app.app_context():
         db.create_all()
