@@ -14,6 +14,7 @@ import spacy
 import bcrypt
 from models import db, User, Job
 import os
+from prolog_engine import rank_candidates, rank_jobs as prolog_rank_jobs
 
 # Common skills to look for in resumes
 COMMON_SKILLS = [
@@ -142,11 +143,12 @@ def require_role(required_role):
             
             token = auth_header.split(' ')[1]
             # Extract email from token (format: token_email_timestamp)
+            # Use join to handle emails that contain underscores
             parts = token.split('_')
-            if len(parts) < 2:
+            if len(parts) < 3:
                 return jsonify({"message": "Invalid token"}), 401
-            
-            email = parts[1]
+
+            email = '_'.join(parts[1:-1])
             user = User.query.filter_by(email=email).first()
             
             if not user:
@@ -299,17 +301,17 @@ def get_profile():
         token = auth_header.split(' ')[1]
         # Extract email from token (format: token_email_timestamp)
         parts = token.split('_')
-        if len(parts) < 2:
+        if len(parts) < 3:
             return jsonify({"message": "Invalid token"}), 401
-        
-        email = parts[1]
-        
+
+        email = '_'.join(parts[1:-1])
+
         # Query user from database
         user = User.query.filter_by(email=email).first()
-        
+
         if not user:
             return jsonify({"message": "User not found"}), 404
-        
+
         return jsonify({
             "user": user.to_dict()
         }), 200
@@ -326,19 +328,19 @@ def update_profile():
         token = auth_header.split(' ')[1]
         # Extract email from token
         parts = token.split('_')
-        if len(parts) < 2:
+        if len(parts) < 3:
             return jsonify({"message": "Invalid token"}), 401
-        
-        email = parts[1]
-        
+
+        email = '_'.join(parts[1:-1])
+
         # Query user from database
         user = User.query.filter_by(email=email).first()
-        
+
         if not user:
             return jsonify({"message": "User not found"}), 404
-        
+
         data = request.json
-        
+
         # Update user fields
         user.name = data.get('name', user.name)
         user.phone = data.get('phone', user.phone)
@@ -364,17 +366,17 @@ def upload_resume():
         
         token = auth_header.split(' ')[1]
         parts = token.split('_')
-        if len(parts) < 2:
+        if len(parts) < 3:
             return jsonify({"message": "Invalid token"}), 401
-        
-        email = parts[1]
-        
+
+        email = '_'.join(parts[1:-1])
+
         # Query user from database
         user = User.query.filter_by(email=email).first()
-        
+
         if not user:
             return jsonify({"message": "User not found"}), 404
-        
+
         if 'resume' not in request.files:
             return jsonify({"message": "No file provided"}), 400
         
@@ -427,17 +429,17 @@ def parse_resume_text():
         
         token = auth_header.split(' ')[1]
         parts = token.split('_')
-        if len(parts) < 2:
+        if len(parts) < 3:
             return jsonify({"message": "Invalid token"}), 401
-        
-        email = parts[1]
-        
+
+        email = '_'.join(parts[1:-1])
+
         # Query user from database
         user = User.query.filter_by(email=email).first()
-        
+
         if not user:
             return jsonify({"message": "User not found"}), 404
-        
+
         data = request.json
         resume_text = data.get('resumeText', '')
         
@@ -487,11 +489,11 @@ def create_job_post():
         
         token = auth_header.split(' ')[1]
         parts = token.split('_')
-        if len(parts) < 2:
+        if len(parts) < 3:
             return jsonify({"message": "Invalid token"}), 401
-        
-        employer_email = parts[1]
-        
+
+        employer_email = '_'.join(parts[1:-1])
+
         # Query employer from database
         employer = User.query.filter_by(email=employer_email).first()
         
@@ -553,6 +555,81 @@ def get_job_posts():
 def get_jobs_alias():
     """Alias for /api/job-posts — kept for frontend compatibility."""
     return get_job_posts()
+
+
+@app.route('/api/jobs/matches', methods=['GET'])
+def get_job_matches():
+    """Return jobs ranked by Prolog match score for the authenticated employee."""
+    auth_header = request.headers.get('Authorization')
+    if not auth_header or not auth_header.startswith('Bearer '):
+        return jsonify({"message": "Unauthorized"}), 401
+
+    token = auth_header.split(' ')[1]
+    parts = token.split('_')
+    if len(parts) < 3:
+        return jsonify({"message": "Invalid token"}), 401
+
+    email = '_'.join(parts[1:-1])
+    user = User.query.filter_by(email=email).first()
+    if not user:
+        return jsonify({"message": "User not found"}), 404
+
+    candidate_skills = user.get_skills_list()
+    if not candidate_skills:
+        return jsonify([]), 200
+
+    all_jobs = Job.query.all()
+    jobs_input = [
+        {
+            'job_id': j.id,
+            'position': j.position,
+            'company': j.company,
+            'required_skills': j.get_skills_list(),
+            'preferred_skills': j.get_preferred_skills_list(),
+        }
+        for j in all_jobs
+    ]
+
+    ranked = prolog_rank_jobs(candidate_skills, jobs_input)
+
+    job_map = {j.id: j for j in all_jobs}
+    results = []
+    for r in ranked:
+        job_obj = job_map[r['job_id']]
+        d = job_obj.to_dict()
+        d['match_score'] = r['score']
+        d['matched_skills'] = r['matched_skills']
+        d['missing_skills'] = r['missing_skills']
+        results.append(d)
+
+    return jsonify(results), 200
+
+
+@app.route('/api/job-posts/<int:job_id>/candidates', methods=['GET'])
+@require_role('employer')
+def get_job_candidates(employer, job_id):
+    """Return employees ranked by Prolog match score for the given job."""
+    job = Job.query.filter_by(id=job_id, employer_id=employer.id).first()
+    if not job:
+        return jsonify({"message": "Job not found"}), 404
+
+    employees = User.query.filter_by(role='employee').all()
+    candidates_input = [
+        {
+            'user_id': u.id,
+            'name': u.name,
+            'skills': u.get_skills_list(),
+        }
+        for u in employees
+    ]
+
+    ranked = rank_candidates(
+        job_required_skills=job.get_skills_list(),
+        job_preferred_skills=job.get_preferred_skills_list(),
+        candidates=candidates_input
+    )
+    return jsonify(ranked), 200
+
 
 # ===== EMPLOYER ENDPOINTS (Role-Based Access) =====
 @app.route("/api/employer/candidates", methods=["GET"])
