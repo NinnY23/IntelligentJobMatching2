@@ -11,7 +11,6 @@ import Applications from './pages/Applications';
 import MyJobs from './pages/MyJobs';
 import Applicants from './pages/Applicants';
 import Dashboard from './pages/Dashboard';
-import './App.css';
 
 function Header({ user, currentPage, onLogout, navigate }) {
   return (
