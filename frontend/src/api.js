@@ -61,10 +61,55 @@ export async function updateProfile(profileData) {
     },
     body: JSON.stringify(profileData),
   });
-  
+
   if (!res.ok) {
     throw new Error('Failed to update profile');
   }
-  
+
   return res.json();
+}
+
+export async function applyForJob(jobId) {
+  const token = localStorage.getItem('token');
+  const res = await fetch(`/api/jobs/${jobId}/apply`, {
+    method: 'POST',
+    headers: {
+      'Authorization': `Bearer ${token}`,
+    },
+  });
+
+  if (!res.ok) {
+    throw new Error('Failed to apply for job');
+  }
+
+  return res.json();
+}
+
+export async function fetchMyApplications() {
+  const token = localStorage.getItem('token');
+  const res = await fetch('/api/applications', {
+    headers: {
+      'Authorization': `Bearer ${token}`,
+    },
+  });
+
+  if (!res.ok) {
+    throw new Error('Failed to fetch applications');
+  }
+
+  return res.json();
+}
+
+export async function withdrawApplication(appId) {
+  const token = localStorage.getItem('token');
+  const res = await fetch(`/api/applications/${appId}`, {
+    method: 'DELETE',
+    headers: {
+      'Authorization': `Bearer ${token}`,
+    },
+  });
+
+  if (!res.ok) {
+    throw new Error('Failed to withdraw application');
+  }
 }
