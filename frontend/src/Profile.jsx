@@ -10,6 +10,8 @@ export default function Profile({ user, onUpdateProfile, onBack }) {
     location: user?.location || '',
     bio: user?.bio || '',
     profilePicture: user?.profilePicture || '',
+    education: user?.education || '',
+    experience: user?.experience || '',
   });
 
   // Skills stored as array internally, joined to comma-string on save
@@ -161,6 +163,38 @@ export default function Profile({ user, onUpdateProfile, onBack }) {
                 rows="4"
               />
             </div>
+
+            {user?.role === 'employee' && (
+              <>
+                <div className="form-group full-width">
+                  <div className="skills-section">
+                    <h4>Background</h4>
+                  </div>
+                </div>
+                <div className="form-group full-width">
+                  <label htmlFor="education">Education</label>
+                  <textarea
+                    id="education"
+                    name="education"
+                    value={formData.education}
+                    onChange={handleInputChange}
+                    placeholder={"e.g.\nB.Eng Computer Engineering, KMITL (2024)\nHigh School Diploma, Bangkok (2020)"}
+                    rows="3"
+                  />
+                </div>
+                <div className="form-group full-width">
+                  <label htmlFor="experience">Experience</label>
+                  <textarea
+                    id="experience"
+                    name="experience"
+                    value={formData.experience}
+                    onChange={handleInputChange}
+                    placeholder={"e.g.\n1 year internship at TechCorp as Backend Developer (2023–2024)\nFreelance web development (2022–2023)"}
+                    rows="3"
+                  />
+                </div>
+              </>
+            )}
 
             <div className="form-group full-width">
               <div className="skills-section">
