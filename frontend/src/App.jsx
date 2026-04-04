@@ -11,7 +11,9 @@ import Applications from './pages/Applications';
 import MyJobs from './pages/MyJobs';
 import Applicants from './pages/Applicants';
 import Dashboard from './pages/Dashboard';
+import Messages from './pages/Messages';
 import Navbar from './components/Navbar';
+import { fetchUnreadCount } from './api';
 
 function DashboardWrapper({ user }) {
   const navigate = useNavigate();
@@ -31,6 +33,7 @@ function ApplicantsWrapper() {
 function AppContent() {
   const [user, setUser] = useState(null);
   const [loading, setLoading] = useState(true);
+  const [unreadMessages, setUnreadMessages] = useState(0);
   const navigate = useNavigate();
 
   useEffect(() => {
@@ -50,6 +53,19 @@ function AppContent() {
     
     setLoading(false);
   }, []);
+
+  useEffect(() => {
+    if (!user) return;
+    async function checkUnread() {
+      try {
+        const count = await fetchUnreadCount();
+        setUnreadMessages(count);
+      } catch {}
+    }
+    checkUnread();
+    const interval = setInterval(checkUnread, 30000);
+    return () => clearInterval(interval);
+  }, [user]);
 
   const handleLoginSuccess = (userData) => {
     setUser(userData);
@@ -99,13 +115,14 @@ function AppContent() {
   // If logged in, show app routes
   return (
     <>
-      <Navbar user={user} onLogout={handleLogout} />
+      <Navbar user={user} onLogout={handleLogout} unreadMessages={unreadMessages} />
       <Routes>
         <Route path="/create-job" element={
           <CreateJobPost onPostCreated={() => navigate('/jobs')} onBack={() => navigate('/jobs')} />
         } />
         <Route path="/jobs" element={<Jobs user={user} />} />
         <Route path="/applications" element={<Applications user={user} />} />
+        <Route path="/messages" element={<Messages user={user} />} />
         <Route path="/profile" element={
           <Profile user={user} onUpdateProfile={handleUpdateProfile} onBack={() => navigate('/jobs')} />
         } />
