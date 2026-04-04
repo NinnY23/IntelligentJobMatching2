@@ -179,4 +179,5 @@ class Message(db.Model):
             'attachment_type': self.attachment_type or '',
             'read': self.read,
             'created_at': self.created_at.isoformat() if self.created_at else None,
+            'updated_at': self.updated_at.isoformat() if self.updated_at else None,
         }
