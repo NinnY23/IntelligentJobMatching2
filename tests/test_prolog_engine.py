@@ -145,3 +145,21 @@ def test_rank_jobs_result_shape():
     assert isinstance(r['score'], float)
     assert isinstance(r['matched_skills'], list)
     assert isinstance(r['missing_skills'], list)
+
+
+def test_rank_candidates_score_formula():
+    """Verify the 70/30 weighted scoring formula produces the correct value."""
+    # 2 of 3 required skills matched = (2/3)*70 = 46.67
+    # 0 of 1 preferred skill matched = 0
+    candidates = [
+        {'user_id': 1, 'name': 'Partial', 'skills': ['python', 'flask']},
+    ]
+    results = rank_candidates(
+        job_required_skills=['python', 'flask', 'docker'],
+        job_preferred_skills=['aws'],
+        candidates=candidates
+    )
+    assert len(results) == 1
+    # Score must be approximately 46.7 (2/3 * 70 = 46.666...)
+    assert abs(results[0]['score'] - 46.7) < 0.5, \
+        f"Expected ~46.7 but got {results[0]['score']}"

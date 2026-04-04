@@ -571,6 +571,9 @@ def get_job_matches():
     if not user:
         return jsonify({"message": "User not found"}), 404
 
+    if user.role != 'employee':
+        return jsonify({"message": "Only job seekers can view job matches"}), 403
+
     candidate_skills = user.get_skills_list()
     if not candidate_skills:
         return jsonify([]), 200

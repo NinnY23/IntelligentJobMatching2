@@ -1,19 +1,14 @@
 """
 prolog_engine.py
 ~~~~~~~~~~~~~~~~
-Thin Python wrapper around matching.pl via pyswip.
+Python bridge to SWI-Prolog via pyswip.
 
 Public API:
     rank_candidates(job_required_skills, job_preferred_skills, candidates)
+        -> sorted list, score > 0, uses Prolog compute_score/4
+
     rank_jobs(candidate_skills, jobs)
-
-Both functions return a list of dicts sorted by score descending.
-
-Both rank_candidates and rank_jobs use Python-side scoring (same formula
-as matching.pl suitable/4) and include results with score > 0, making
-partial matches visible even when below the 50-point threshold.
-The Prolog engine is still used for consulting matching.pl and is
-available via get_prolog() for direct queries.
+        -> sorted list, score > 0 only, uses Prolog compute_score/4
 """
 from dotenv import load_dotenv
 load_dotenv()  # ensure SWI_HOME_DIR is set before pyswip initialises
@@ -21,11 +16,16 @@ load_dotenv()  # ensure SWI_HOME_DIR is set before pyswip initialises
 import os
 from pyswip import Prolog
 
-_prolog = None  # module-level singleton
+_prolog = None  # lazily initialised singleton
 
 
 def get_prolog() -> Prolog:
-    """Return (and lazily initialise) the Prolog singleton."""
+    """Return (and lazily initialise) the Prolog singleton.
+
+    Thread safety: the singleton is initialised on first call. Flask's
+    development server is single-threaded, so this is safe. Multi-threaded
+    WSGI deployments would need a lock around the None check.
+    """
     global _prolog
     if _prolog is None:
         _prolog = Prolog()
@@ -37,35 +37,10 @@ def get_prolog() -> Prolog:
 def _to_prolog_list(items: list) -> str:
     """Convert a Python list of strings to a Prolog list literal, lower-cased.
 
-    Example: ['Python', 'Flask'] → "['python','flask']"
+    Example: ['Python', 'Flask'] -> "['python','flask']"
     """
     escaped = [f"'{item.lower().strip()}'" for item in items if item.strip()]
     return '[' + ','.join(escaped) + ']'
-
-
-def _compute_score(cand_skills: set, req_skills: set, pref_skills: set) -> float:
-    """Compute the match score in Python using the same formula as matching.pl.
-
-    Score = (|cand ∩ req| / |req|) * 70  +  (|cand ∩ pref| / |pref|) * 30
-
-    Special cases (mirroring the Prolog rules):
-      - If req is empty  → required component is 70 (full score)
-      - If pref is empty → preferred component is 0
-    """
-    matched_req = cand_skills & req_skills
-    matched_pref = cand_skills & pref_skills
-
-    if req_skills:
-        req_score = (len(matched_req) / len(req_skills)) * 70
-    else:
-        req_score = 70.0
-
-    if pref_skills:
-        pref_score = (len(matched_pref) / len(pref_skills)) * 30
-    else:
-        pref_score = 0.0
-
-    return req_score + pref_score
 
 
 def rank_candidates(
@@ -73,34 +48,35 @@ def rank_candidates(
     job_preferred_skills: list,
     candidates: list
 ) -> list:
-    """Rank employee candidates for a job.
+    """Rank employee candidates for a job using the Prolog engine.
 
-    Uses Python-side scoring (same formula as matching.pl) so that partial
-    matches with score > 0 but < 50 are still visible to employers.
+    Uses compute_score/4 (no 50-point threshold) so ALL candidates with
+    any skill overlap appear in the results — useful for employer review.
 
     Args:
         job_required_skills: list of skill strings (required for the job)
         job_preferred_skills: list of skill strings (nice-to-have)
-        candidates: list of dicts, each with keys:
-                    - user_id (int)
-                    - name    (str)
-                    - skills  (list of str)
+        candidates: list of dicts with keys: user_id, name, skills (list)
 
     Returns:
-        List of dicts sorted by score descending. Each dict contains:
-            user_id, name, score (float), matched_skills (list),
-            missing_skills (list).
-        Only candidates with score > 0 are included.
+        List of dicts sorted by score descending, score > 0 only.
+        Each dict: user_id, name, score (float), matched_skills, missing_skills.
     """
+    prolog = get_prolog()
+    req = _to_prolog_list(job_required_skills)
+    pref = _to_prolog_list(job_preferred_skills)
     req_set = {s.lower().strip() for s in job_required_skills if s.strip()}
-    pref_set = {s.lower().strip() for s in job_preferred_skills if s.strip()}
 
     results = []
     for candidate in candidates:
-        cand_set = {s.lower().strip() for s in candidate['skills'] if s.strip()}
-        score = _compute_score(cand_set, req_set, pref_set)
-
-        if score > 0:
+        cskills = _to_prolog_list(candidate['skills'])
+        query = f"compute_score({cskills}, {req}, {pref}, Score)"
+        solutions = list(prolog.query(query))
+        if solutions:
+            score = float(solutions[0]['Score'])
+            if score <= 0:
+                continue
+            cand_set = {s.lower().strip() for s in candidate['skills'] if s.strip()}
             matched = sorted(req_set & cand_set)
             missing = sorted(req_set - cand_set)
             results.append({
@@ -115,35 +91,36 @@ def rank_candidates(
 
 
 def rank_jobs(candidate_skills: list, jobs: list) -> list:
-    """Rank job postings for a candidate.
+    """Rank job postings for a candidate using the Prolog engine.
 
-    Uses Python-side scoring (same formula as matching.pl) so that partial
-    matches with score > 0 but < 50 are still visible to candidates.
+    Uses compute_score/4 (no 50-point threshold) so partial matches are
+    visible to candidates browsing job listings.
 
     Args:
         candidate_skills: list of skill strings the candidate has
-        jobs: list of dicts, each with keys:
-              - job_id          (int)
-              - position        (str)
-              - company         (str)
-              - required_skills (list of str)
-              - preferred_skills (list of str, optional)
+        jobs: list of dicts with keys: job_id, position, company,
+              required_skills (list), preferred_skills (list, optional)
 
     Returns:
-        List of dicts sorted by score descending. Each dict contains:
-            job_id, position, company, score (float),
-            matched_skills (list), missing_skills (list).
-        Only jobs with score > 0 are included.
+        List of dicts sorted by score descending, score > 0 only.
+        Each dict: job_id, position, company, score (float),
+                   matched_skills, missing_skills.
     """
+    prolog = get_prolog()
+    cskills = _to_prolog_list(candidate_skills)
     cand_set = {s.lower().strip() for s in candidate_skills if s.strip()}
 
     results = []
     for job in jobs:
-        req_set = {s.lower().strip() for s in job['required_skills'] if s.strip()}
-        pref_set = {s.lower().strip() for s in job.get('preferred_skills', []) if s.strip()}
-        score = _compute_score(cand_set, req_set, pref_set)
-
-        if score > 0:
+        req = _to_prolog_list(job['required_skills'])
+        pref = _to_prolog_list(job.get('preferred_skills', []))
+        query = f"compute_score({cskills}, {req}, {pref}, Score)"
+        solutions = list(prolog.query(query))
+        if solutions:
+            score = float(solutions[0]['Score'])
+            if score <= 0:
+                continue
+            req_set = {s.lower().strip() for s in job['required_skills'] if s.strip()}
             matched = sorted(req_set & cand_set)
             missing = sorted(req_set - cand_set)
             results.append({
