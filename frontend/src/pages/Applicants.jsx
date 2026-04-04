@@ -139,18 +139,18 @@ export default function Applicants({ jobId }) {
                 </td>
                 <td>
                   <div className="skill-tags">
-                    {a.matched_skills.length === 0
+                    {(a.matched_skills || []).length === 0
                       ? <span className="muted">—</span>
-                      : a.matched_skills.map(s => (
+                      : (a.matched_skills || []).map(s => (
                           <span key={s} className="skill-tag matched">{s}</span>
                         ))}
                   </div>
                 </td>
                 <td>
                   <div className="skill-tags">
-                    {a.missing_skills.length === 0
+                    {(a.missing_skills || []).length === 0
                       ? <span className="muted">—</span>
-                      : a.missing_skills.map(s => (
+                      : (a.missing_skills || []).map(s => (
                           <span key={s} className="skill-tag missing">{s}</span>
                         ))}
                   </div>
