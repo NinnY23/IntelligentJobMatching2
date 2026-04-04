@@ -131,6 +131,7 @@ export default function Applications() {
       setConfirmTarget(null);
     } catch (err) {
       setWithdrawError(err.message || 'Failed to withdraw application. It may already be shortlisted.');
+      setConfirmTarget(null);
     } finally {
       setWithdrawing(false);
     }
