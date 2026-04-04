@@ -1,5 +1,5 @@
 // src/Profile.jsx
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import './Profile.css';
 
 export default function Profile({ user, onUpdateProfile, onBack }) {
@@ -9,21 +9,42 @@ export default function Profile({ user, onUpdateProfile, onBack }) {
     phone: user?.phone || '',
     location: user?.location || '',
     bio: user?.bio || '',
-    skills: user?.skills || '',
     profilePicture: user?.profilePicture || '',
   });
+
+  // Skills stored as array internally, joined to comma-string on save
+  const [skills, setSkills] = useState(() => {
+    if (!user?.skills) return [];
+    return user.skills.split(',').map((s) => s.trim()).filter(Boolean);
+  });
+  const [skillInput, setSkillInput] = useState('');
 
   const [error, setError] = useState('');
   const [success, setSuccess] = useState('');
   const [loading, setLoading] = useState(false);
-  const [isEditing, setIsEditing] = useState(false);
 
   const handleInputChange = (e) => {
     const { name, value } = e.target;
-    setFormData((prev) => ({
-      ...prev,
-      [name]: value,
-    }));
+    setFormData((prev) => ({ ...prev, [name]: value }));
+  };
+
+  const handleAddSkill = () => {
+    const trimmed = skillInput.trim();
+    if (trimmed && !skills.includes(trimmed)) {
+      setSkills((prev) => [...prev, trimmed]);
+    }
+    setSkillInput('');
+  };
+
+  const handleSkillInputKeyDown = (e) => {
+    if (e.key === 'Enter') {
+      e.preventDefault();
+      handleAddSkill();
+    }
+  };
+
+  const handleRemoveSkill = (skill) => {
+    setSkills((prev) => prev.filter((s) => s !== skill));
   };
 
   const handleSubmit = async (e) => {
@@ -34,13 +55,14 @@ export default function Profile({ user, onUpdateProfile, onBack }) {
 
     try {
       const token = localStorage.getItem('token');
+      const payload = { ...formData, skills: skills.join(', ') };
       const response = await fetch('http://localhost:5000/api/profile', {
         method: 'PUT',
         headers: {
           'Content-Type': 'application/json',
           'Authorization': `Bearer ${token}`,
         },
-        body: JSON.stringify(formData),
+        body: JSON.stringify(payload),
       });
 
       if (!response.ok) {
@@ -52,7 +74,6 @@ export default function Profile({ user, onUpdateProfile, onBack }) {
       localStorage.setItem('user', JSON.stringify(updatedUser.user));
       onUpdateProfile(updatedUser.user);
       setSuccess('Profile updated successfully!');
-      setIsEditing(false);
     } catch (err) {
       setError(err.message || 'Failed to update profile. Please try again.');
     } finally {
@@ -60,77 +81,77 @@ export default function Profile({ user, onUpdateProfile, onBack }) {
     }
   };
 
+  const initials = user?.name
+    ? user.name.split(' ').map((w) => w[0]).join('').slice(0, 2).toUpperCase()
+    : '?';
+
   return (
-    <div className="profile-container">
-      <div className="profile-header">
-        <button className="back-btn" onClick={onBack}>← Back</button>
-        <h1>My Profile</h1>
-        {!isEditing && (
-          <button className="edit-btn" onClick={() => setIsEditing(true)}>
-            Edit Profile
-          </button>
-        )}
+    <div className="profile-page">
+      <div className="profile-header-card">
+        <div className="profile-avatar-large">{initials}</div>
+        <div className="profile-header-info">
+          <h2>{user?.name || 'Your Profile'}</h2>
+          <span className="profile-role-badge">{user?.role || 'user'}</span>
+        </div>
       </div>
 
-      <div className="profile-content">
-        {isEditing ? (
-          <form onSubmit={handleSubmit} className="profile-form">
-            <div className="form-row">
-              <div className="form-group">
-                <label htmlFor="name">Full Name:</label>
-                <input
-                  id="name"
-                  type="text"
-                  name="name"
-                  value={formData.name}
-                  onChange={handleInputChange}
-                  placeholder="Enter your full name"
-                  required
-                />
-              </div>
+      <div className="profile-form-card">
+        <h3>Edit Profile</h3>
 
-              <div className="form-group">
-                <label htmlFor="email">Email:</label>
-                <input
-                  id="email"
-                  type="email"
-                  name="email"
-                  value={formData.email}
-                  onChange={handleInputChange}
-                  placeholder="Enter your email"
-                  disabled
-                />
-              </div>
+        <form onSubmit={handleSubmit}>
+          <div className="form-grid">
+            <div className="form-group">
+              <label htmlFor="name">Full Name</label>
+              <input
+                id="name"
+                type="text"
+                name="name"
+                value={formData.name}
+                onChange={handleInputChange}
+                placeholder="Enter your full name"
+                required
+              />
             </div>
 
-            <div className="form-row">
-              <div className="form-group">
-                <label htmlFor="phone">Phone:</label>
-                <input
-                  id="phone"
-                  type="tel"
-                  name="phone"
-                  value={formData.phone}
-                  onChange={handleInputChange}
-                  placeholder="Enter your phone number"
-                />
-              </div>
+            <div className="form-group">
+              <label htmlFor="email">Email</label>
+              <input
+                id="email"
+                type="email"
+                name="email"
+                value={formData.email}
+                onChange={handleInputChange}
+                placeholder="Enter your email"
+                disabled
+              />
+            </div>
 
-              <div className="form-group">
-                <label htmlFor="location">Location:</label>
-                <input
-                  id="location"
-                  type="text"
-                  name="location"
-                  value={formData.location}
-                  onChange={handleInputChange}
-                  placeholder="Enter your location"
-                />
-              </div>
+            <div className="form-group">
+              <label htmlFor="phone">Phone</label>
+              <input
+                id="phone"
+                type="tel"
+                name="phone"
+                value={formData.phone}
+                onChange={handleInputChange}
+                placeholder="Enter your phone number"
+              />
+            </div>
+
+            <div className="form-group">
+              <label htmlFor="location">Location</label>
+              <input
+                id="location"
+                type="text"
+                name="location"
+                value={formData.location}
+                onChange={handleInputChange}
+                placeholder="Enter your location"
+              />
             </div>
 
             <div className="form-group full-width">
-              <label htmlFor="bio">Bio:</label>
+              <label htmlFor="bio">Bio</label>
               <textarea
                 id="bio"
                 name="bio"
@@ -142,66 +163,53 @@ export default function Profile({ user, onUpdateProfile, onBack }) {
             </div>
 
             <div className="form-group full-width">
-              <label htmlFor="skills">Skills (comma-separated):</label>
-              <input
-                id="skills"
-                type="text"
-                name="skills"
-                value={formData.skills}
-                onChange={handleInputChange}
-                placeholder="e.g., JavaScript, React, Python"
-              />
-            </div>
-
-            {error && <div className="error-message">{error}</div>}
-            {success && <div className="success-message">{success}</div>}
-
-            <div className="form-actions">
-              <button type="submit" disabled={loading} className="save-btn">
-                {loading ? 'Saving...' : 'Save Changes'}
-              </button>
-              <button
-                type="button"
-                onClick={() => setIsEditing(false)}
-                className="cancel-btn"
-              >
-                Cancel
-              </button>
-            </div>
-          </form>
-        ) : (
-          <div className="profile-view">
-            <div className="profile-item">
-              <span className="label">Name:</span>
-              <span className="value">{formData.name || 'Not set'}</span>
-            </div>
-
-            <div className="profile-item">
-              <span className="label">Email:</span>
-              <span className="value">{formData.email}</span>
-            </div>
-
-            <div className="profile-item">
-              <span className="label">Phone:</span>
-              <span className="value">{formData.phone || 'Not set'}</span>
-            </div>
-
-            <div className="profile-item">
-              <span className="label">Location:</span>
-              <span className="value">{formData.location || 'Not set'}</span>
-            </div>
-
-            <div className="profile-item">
-              <span className="label">Bio:</span>
-              <span className="value">{formData.bio || 'Not set'}</span>
-            </div>
-
-            <div className="profile-item">
-              <span className="label">Skills:</span>
-              <span className="value">{formData.skills || 'Not set'}</span>
+              <div className="skills-section">
+                <h4>Skills</h4>
+                <div className="skills-input-row">
+                  <input
+                    type="text"
+                    value={skillInput}
+                    onChange={(e) => setSkillInput(e.target.value)}
+                    onKeyDown={handleSkillInputKeyDown}
+                    placeholder="e.g. JavaScript, React, Python"
+                  />
+                  <button type="button" className="btn-primary" onClick={handleAddSkill}>
+                    Add
+                  </button>
+                </div>
+                {skills.length > 0 && (
+                  <div className="skill-list">
+                    {skills.map((skill) => (
+                      <span key={skill} className="skill-item">
+                        {skill}
+                        <button
+                          type="button"
+                          className="skill-remove"
+                          onClick={() => handleRemoveSkill(skill)}
+                          aria-label={`Remove ${skill}`}
+                        >
+                          ×
+                        </button>
+                      </span>
+                    ))}
+                  </div>
+                )}
+              </div>
             </div>
           </div>
-        )}
+
+          {success && <div className="form-success">{success}</div>}
+          {error && <div className="form-error-msg">{error}</div>}
+
+          <div className="form-actions">
+            <button type="button" className="btn-outline" onClick={onBack}>
+              Cancel
+            </button>
+            <button type="submit" className="btn-primary" disabled={loading}>
+              {loading ? 'Saving…' : 'Save Changes'}
+            </button>
+          </div>
+        </form>
       </div>
     </div>
   );
