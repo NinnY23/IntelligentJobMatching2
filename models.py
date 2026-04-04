@@ -83,6 +83,7 @@ class Job(db.Model):
     openings = db.Column(db.Integer, default=1)
     deadline = db.Column(db.String(50), default='')
     applicants = db.Column(db.Integer, default=0)
+    status = db.Column(db.String(20), default='active', nullable=False)  # 'draft', 'active', 'archived'
     created_at = db.Column(db.DateTime, nullable=False, default=datetime.now)
     updated_at = db.Column(db.DateTime, nullable=False, default=datetime.now, onupdate=datetime.now)
 
@@ -102,6 +103,7 @@ class Job(db.Model):
             'openings': self.openings,
             'deadline': self.deadline,
             'applicants': self.applicants,
+            'status': self.status,
             'created_at': self.created_at.isoformat() if self.created_at else None,
             'updated_at': self.updated_at.isoformat() if self.updated_at else None,
         }

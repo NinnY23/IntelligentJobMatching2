@@ -8,6 +8,7 @@ export default function MyJobs({ user, navigate }) {
   const [editJob, setEditJob] = useState(null);
   const [deleteConfirm, setDeleteConfirm] = useState(null);
   const [message, setMessage] = useState('');
+  const [filter, setFilter] = useState('all');
 
   useEffect(() => {
     loadMyJobs();
@@ -17,17 +18,61 @@ export default function MyJobs({ user, navigate }) {
     setLoading(true);
     const token = localStorage.getItem('token');
     try {
-      const res = await fetch('/api/job-posts', {
+      const res = await fetch('/api/employer/jobs', {
         headers: { 'Authorization': `Bearer ${token}` },
       });
-      const allJobs = await res.json();
-      // Filter to only this employer's jobs
-      const myJobs = allJobs.filter(j => j.employer_id === user.id);
-      setJobs(myJobs);
+      const data = await res.json();
+      setJobs(data.jobs || []);
     } catch {
       setMessage('Failed to load jobs.');
     }
     setLoading(false);
+  }
+
+  async function handleArchive(jobId) {
+    const token = localStorage.getItem('token');
+    try {
+      const res = await fetch(`/api/job-posts/${jobId}`, {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`,
+        },
+        body: JSON.stringify({ status: 'archived' }),
+      });
+      if (res.ok) {
+        setMessage('Job archived.');
+        loadMyJobs();
+      } else {
+        const data = await res.json();
+        setMessage(data.message || 'Failed to archive job.');
+      }
+    } catch {
+      setMessage('Network error. Could not archive job.');
+    }
+  }
+
+  async function handlePublish(jobId) {
+    const token = localStorage.getItem('token');
+    try {
+      const res = await fetch(`/api/job-posts/${jobId}`, {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`,
+        },
+        body: JSON.stringify({ status: 'active' }),
+      });
+      if (res.ok) {
+        setMessage('Job published.');
+        loadMyJobs();
+      } else {
+        const data = await res.json();
+        setMessage(data.message || 'Failed to publish job.');
+      }
+    } catch {
+      setMessage('Network error. Could not publish job.');
+    }
   }
 
   async function handleDelete(jobId) {
@@ -75,6 +120,16 @@ export default function MyJobs({ user, navigate }) {
     }
   }
 
+  const filteredJobs = filter === 'all' ? jobs : jobs.filter(j => j.status === filter);
+
+  const statusBadgeStyle = (status) => {
+    const base = { padding: '2px 8px', borderRadius: '12px', fontSize: '0.75rem', fontWeight: 600 };
+    if (status === 'active') return { ...base, background: '#d1fae5', color: '#065f46' };
+    if (status === 'draft') return { ...base, background: '#fef3c7', color: '#92400e' };
+    if (status === 'archived') return { ...base, background: '#f3f4f6', color: '#6b7280' };
+    return base;
+  };
+
   if (loading) return <div className="loading">Loading your job postings...</div>;
 
   return (
@@ -92,12 +147,31 @@ export default function MyJobs({ user, navigate }) {
         </div>
       )}
 
-      {jobs.length === 0 ? (
-        <div className="empty-state">
-          <p>No job postings yet.</p>
-          <button className="btn-primary" onClick={() => navigate('/create-job')}>
-            Create your first posting
+      <div style={{ display: 'flex', gap: '8px', marginBottom: '16px' }}>
+        {['all', 'active', 'draft', 'archived'].map(tab => (
+          <button
+            key={tab}
+            onClick={() => setFilter(tab)}
+            style={{
+              padding: '6px 16px', borderRadius: '20px', border: '1px solid #d1d5db',
+              background: filter === tab ? '#2563eb' : '#fff',
+              color: filter === tab ? '#fff' : '#374151',
+              cursor: 'pointer', fontWeight: 500, textTransform: 'capitalize'
+            }}
+          >
+            {tab === 'all' ? 'All' : tab.charAt(0).toUpperCase() + tab.slice(1) + 's'}
           </button>
+        ))}
+      </div>
+
+      {filteredJobs.length === 0 ? (
+        <div className="empty-state">
+          <p>{jobs.length === 0 ? 'No job postings yet.' : `No ${filter} jobs.`}</p>
+          {jobs.length === 0 && (
+            <button className="btn-primary" onClick={() => navigate('/create-job')}>
+              Create your first posting
+            </button>
+          )}
         </div>
       ) : (
         <table className="jobs-table">
@@ -106,17 +180,19 @@ export default function MyJobs({ user, navigate }) {
               <th>Position</th>
               <th>Company</th>
               <th>Location</th>
+              <th>Status</th>
               <th>Applicants</th>
               <th>Deadline</th>
               <th>Actions</th>
             </tr>
           </thead>
           <tbody>
-            {jobs.map(job => (
+            {filteredJobs.map(job => (
               <tr key={job.id}>
                 <td>{job.position}</td>
                 <td>{job.company}</td>
                 <td>{job.location}</td>
+                <td><span style={statusBadgeStyle(job.status)}>{job.status}</span></td>
                 <td>{job.applicants || 0}</td>
                 <td>{job.deadline}</td>
                 <td className="action-cell">
@@ -132,6 +208,30 @@ export default function MyJobs({ user, navigate }) {
                   >
                     Applicants
                   </button>
+                  {job.status === 'active' && (
+                    <button
+                      className="btn-sm"
+                      onClick={() => handleArchive(job.id)}
+                    >
+                      Archive
+                    </button>
+                  )}
+                  {job.status === 'draft' && (
+                    <button
+                      className="btn-sm"
+                      onClick={() => handlePublish(job.id)}
+                    >
+                      Publish
+                    </button>
+                  )}
+                  {job.status === 'archived' && (
+                    <button
+                      className="btn-sm"
+                      onClick={() => handlePublish(job.id)}
+                    >
+                      Reactivate
+                    </button>
+                  )}
                   <button
                     className="btn-danger-sm"
                     onClick={() => setDeleteConfirm(job.id)}

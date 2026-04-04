@@ -28,8 +28,7 @@ export default function CreateJobPost({ onPostCreated, onBack }) {
     }));
   };
 
-  const handleSubmit = async (e) => {
-    e.preventDefault();
+  const submitJob = async (status) => {
     setError('');
     setSuccess('');
 
@@ -54,26 +53,26 @@ export default function CreateJobPost({ onPostCreated, onBack }) {
           'Content-Type': 'application/json',
           'Authorization': `Bearer ${token}`,
         },
-        body: JSON.stringify(formData),
+        body: JSON.stringify({ ...formData, status }),
       });
 
       if (!response.ok) {
         const contentType = response.headers.get('content-type');
         let errorMessage = 'Failed to create job post';
-        
+
         if (contentType && contentType.includes('application/json')) {
           const data = await response.json();
           errorMessage = data.message || errorMessage;
         } else {
           errorMessage = `Server error: ${response.status}`;
         }
-        
+
         throw new Error(errorMessage);
       }
 
       const data = await response.json();
-      setSuccess('Job post created successfully!');
-      
+      setSuccess(status === 'draft' ? 'Job saved as draft!' : 'Job post created successfully!');
+
       // Reset form
       setFormData({
         position: '',
@@ -97,6 +96,15 @@ export default function CreateJobPost({ onPostCreated, onBack }) {
     } finally {
       setLoading(false);
     }
+  };
+
+  const handleSubmit = (e) => {
+    e.preventDefault();
+    submitJob('active');
+  };
+
+  const handleSaveDraft = () => {
+    submitJob('draft');
   };
 
   return (
@@ -240,9 +248,16 @@ export default function CreateJobPost({ onPostCreated, onBack }) {
             <button type="button" onClick={onBack} className="btn-outline">
               Cancel
             </button>
-            <button type="submit" disabled={loading} className="btn-primary">
-              {loading ? 'Posting...' : 'Post Job'}
-            </button>
+            <div style={{ display: 'flex', gap: '12px' }}>
+              <button type="submit" disabled={loading} className="btn-primary">
+                {loading ? 'Posting...' : 'Post Job'}
+              </button>
+              <button type="button" onClick={handleSaveDraft} disabled={loading}
+                style={{ background: '#f3f4f6', color: '#374151', border: '1px solid #d1d5db',
+                         padding: '10px 20px', borderRadius: '8px', cursor: 'pointer' }}>
+                {loading ? 'Saving...' : 'Save as Draft'}
+              </button>
+            </div>
           </div>
         </form>
       </div>

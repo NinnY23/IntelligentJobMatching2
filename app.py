@@ -542,6 +542,10 @@ def create_job_post():
         required_skills = data.get('required_skills', data.get('skills', ''))
         preferred_skills = data.get('preferred_skills', '')
 
+        status = data.get('status', 'active')
+        if status not in ('draft', 'active'):
+            return jsonify({"message": "Status must be 'draft' or 'active'"}), 400
+
         # Create new job post
         job_post = Job(
             employer_id=employer.id,
@@ -556,7 +560,8 @@ def create_job_post():
             job_type=data.get('type', 'Full-time'),
             openings=int(data.get('openings', 1)),
             deadline=data.get('deadline', ''),
-            applicants=0
+            applicants=0,
+            status=status
         )
         
         db.session.add(job_post)
@@ -573,10 +578,10 @@ def create_job_post():
 @app.route("/api/job-posts", methods=["GET"])
 def get_job_posts():
     try:
-        # Query all job posts from database
-        jobs = Job.query.all()
+        # Query only active job posts from database
+        jobs = Job.query.filter_by(status='active').all()
         jobs_list = [job.to_dict() for job in jobs]
-        
+
         return jsonify(jobs_list), 200
     except Exception as e:
         return jsonify({"message": str(e)}), 500
@@ -601,7 +606,7 @@ def get_job_matches():
     if not candidate_skills:
         return jsonify([]), 200
 
-    all_jobs = Job.query.all()
+    all_jobs = Job.query.filter_by(status='active').all()
     jobs_input = [
         {
             'job_id': j.id,
@@ -637,10 +642,14 @@ def update_job_post(employer, job_id):
         return jsonify({"message": "Job not found"}), 404
 
     data = request.get_json()
+
+    if 'status' in data and data['status'] not in ('draft', 'active', 'archived'):
+        return jsonify({"message": "Invalid status"}), 400
+
     updatable_fields = [
         'position', 'company', 'location', 'description',
         'required_skills', 'preferred_skills',
-        'salary_min', 'salary_max', 'job_type', 'openings', 'deadline'
+        'salary_min', 'salary_max', 'job_type', 'openings', 'deadline', 'status'
     ]
     for field in updatable_fields:
         if field in data:
