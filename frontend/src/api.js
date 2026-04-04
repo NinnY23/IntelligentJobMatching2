@@ -111,3 +111,56 @@ export async function withdrawApplication(appId) {
     throw new Error('Failed to withdraw application');
   }
 }
+
+export async function updateJobPost(jobId, data) {
+  const token = localStorage.getItem('token');
+  const res = await fetch(`/api/job-posts/${jobId}`, {
+    method: 'PUT',
+    headers: {
+      'Content-Type': 'application/json',
+      'Authorization': `Bearer ${token}`,
+    },
+    body: JSON.stringify(data),
+  });
+  return { ok: res.ok, data: await res.json() };
+}
+
+export async function deleteJobPost(jobId) {
+  const token = localStorage.getItem('token');
+  const res = await fetch(`/api/job-posts/${jobId}`, {
+    method: 'DELETE',
+    headers: { 'Authorization': `Bearer ${token}` },
+  });
+  return { ok: res.ok, data: await res.json() };
+}
+
+export async function fetchJobApplicants(jobId) {
+  const token = localStorage.getItem('token');
+  const res = await fetch(`/api/job-posts/${jobId}/applicants`, {
+    headers: { 'Authorization': `Bearer ${token}` },
+  });
+  if (!res.ok) throw new Error('Failed to fetch applicants');
+  return res.json();
+}
+
+export async function updateApplicationStatus(appId, status) {
+  const token = localStorage.getItem('token');
+  const res = await fetch(`/api/applications/${appId}/status`, {
+    method: 'PATCH',
+    headers: {
+      'Content-Type': 'application/json',
+      'Authorization': `Bearer ${token}`,
+    },
+    body: JSON.stringify({ status }),
+  });
+  return { ok: res.ok, data: await res.json() };
+}
+
+export async function fetchEmployerDashboard() {
+  const token = localStorage.getItem('token');
+  const res = await fetch('/api/employer/dashboard', {
+    headers: { 'Authorization': `Bearer ${token}` },
+  });
+  if (!res.ok) throw new Error('Failed to fetch dashboard');
+  return res.json();
+}
