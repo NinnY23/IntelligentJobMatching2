@@ -334,3 +334,20 @@ def test_dashboard_empty_for_new_employer(client):
     assert data['total_applicants'] == 0
     assert data['total_shortlisted'] == 0
     assert data['recent_applications'] == []
+
+
+def test_applicants_response_includes_profile_fields(client, employer_token, seeker_token, sample_job):
+    """GET /api/job-posts/<id>/applicants returns bio, education, experience per applicant."""
+    # Seeker applies for the job
+    client.post(f'/api/jobs/{sample_job["id"]}/apply',
+                headers={'Authorization': f'Bearer {seeker_token}'})
+    # Employer views applicants
+    res = client.get(f'/api/job-posts/{sample_job["id"]}/applicants',
+                     headers={'Authorization': f'Bearer {employer_token}'})
+    assert res.status_code == 200
+    data = res.get_json()
+    assert len(data) == 1
+    applicant = data[0]
+    assert 'bio' in applicant
+    assert 'education' in applicant
+    assert 'experience' in applicant

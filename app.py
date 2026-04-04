@@ -349,6 +349,8 @@ def update_profile():
         user.phone = data.get('phone', user.phone)
         user.location = data.get('location', user.location)
         user.bio = data.get('bio', user.bio)
+        user.education = data.get('education', user.education)
+        user.experience = data.get('experience', user.experience)
         user.skills = data.get('skills', user.skills)
         
         db.session.commit()
@@ -868,6 +870,9 @@ def get_job_applicants(employer, job_id):
             'name': applicant.name,
             'email': applicant.email,
             'skills': applicant.skills,
+            'bio': applicant.bio or '',
+            'education': applicant.education or '',
+            'experience': applicant.experience or '',
             'match_score': score,
             'matched_skills': matched,
             'missing_skills': missing,

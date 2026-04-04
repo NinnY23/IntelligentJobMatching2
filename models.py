@@ -17,6 +17,8 @@ class User(db.Model):
     phone = db.Column(db.String(20), default='')
     location = db.Column(db.String(120), default='')
     bio = db.Column(db.Text, default='')
+    education = db.Column(db.Text, default='')
+    experience = db.Column(db.Text, default='')
     skills = db.Column(db.Text, default='')  # Stored as comma-separated string
     role = db.Column(db.String(50), default='employee', nullable=False)  # 'employee' or 'employer'
     created_at = db.Column(db.DateTime, nullable=False, default=datetime.now)
@@ -42,6 +44,8 @@ class User(db.Model):
             'phone': self.phone,
             'location': self.location,
             'bio': self.bio,
+            'education': self.education or '',
+            'experience': self.experience or '',
             'skills': self.skills,
             'role': self.role
         }
