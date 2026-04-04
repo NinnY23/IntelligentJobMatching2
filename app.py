@@ -833,6 +833,47 @@ def withdraw_application(app_id):
     return jsonify({"message": "Application withdrawn"}), 200
 
 
+@app.route('/api/job-posts/<int:job_id>/applicants', methods=['GET'])
+@require_role('employer')
+def get_job_applicants(employer, job_id):
+    """Return all applicants for a job, ranked by match score."""
+    job = Job.query.filter_by(id=job_id, employer_id=employer.id).first()
+    if not job:
+        return jsonify({"message": "Job not found"}), 404
+
+    apps = Application.query.filter_by(job_id=job_id).all()
+    result = []
+    required = [s.strip().lower() for s in (job.required_skills or '').split(',') if s.strip()]
+    preferred = [s.strip().lower() for s in (job.preferred_skills or '').split(',') if s.strip()]
+
+    for a in apps:
+        applicant = User.query.get(a.user_id)
+        if not applicant:
+            continue
+        candidate_skills = [
+            s.strip().lower()
+            for s in (applicant.skills or '').split(',') if s.strip()
+        ]
+        matched = [s for s in required if s in candidate_skills]
+        missing = [s for s in required if s not in candidate_skills]
+        score = round((len(matched) / len(required) * 70) if required else 0)
+        result.append({
+            'application_id': a.id,
+            'status': a.status,
+            'applied_at': a.created_at.isoformat(),
+            'user_id': applicant.id,
+            'name': applicant.name,
+            'email': applicant.email,
+            'skills': applicant.skills,
+            'match_score': score,
+            'matched_skills': matched,
+            'missing_skills': missing,
+        })
+
+    result.sort(key=lambda x: x['match_score'], reverse=True)
+    return jsonify(result), 200
+
+
 @app.route('/api/applications/<int:app_id>/status', methods=['PATCH'])
 @require_role('employer')
 def update_application_status(employer, app_id):

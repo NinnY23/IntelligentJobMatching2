@@ -114,3 +114,150 @@ def test_delete_job_cascades_to_applications(client, employer_token, seeker_toke
                      headers={'Authorization': f'Bearer {seeker_token}'})
     apps = res.get_json()
     assert not any(a['job_id'] == sample_job['id'] for a in apps)
+
+
+# ── GET /api/job-posts/<id>/applicants ─────────────────────────────────────
+
+def test_employer_can_view_applicants(client, employer_token, seeker_token, sample_job):
+    # Seeker applies
+    client.post(
+        f'/api/jobs/{sample_job["id"]}/apply',
+        headers={'Authorization': f'Bearer {seeker_token}'}
+    )
+    res = client.get(
+        f'/api/job-posts/{sample_job["id"]}/applicants',
+        headers={'Authorization': f'Bearer {employer_token}'}
+    )
+    assert res.status_code == 200
+    applicants = res.get_json()
+    assert len(applicants) == 1
+    assert applicants[0]['name'] == 'Seeker'
+
+
+def test_applicants_response_includes_match_fields(client, employer_token, seeker_token, sample_job):
+    client.post(
+        f'/api/jobs/{sample_job["id"]}/apply',
+        headers={'Authorization': f'Bearer {seeker_token}'}
+    )
+    res = client.get(
+        f'/api/job-posts/{sample_job["id"]}/applicants',
+        headers={'Authorization': f'Bearer {employer_token}'}
+    )
+    a = res.get_json()[0]
+    for field in ('application_id', 'status', 'applied_at', 'name', 'email',
+                  'match_score', 'matched_skills', 'missing_skills'):
+        assert field in a, f"Missing field: {field}"
+
+
+def test_applicants_sorted_by_match_score_descending(client, employer_token, sample_job):
+    # Create two seekers with different skills
+    client.post('/api/signup', json={
+        'email': 'high@t.com', 'password': 'p', 'name': 'High',
+        'role': 'employee'
+    })
+    client.post('/api/signup', json={
+        'email': 'low@t.com', 'password': 'p', 'name': 'Low',
+        'role': 'employee'
+    })
+    # Give high-match seeker skills matching the job
+    high_login = client.post('/api/login', json={'email': 'high@t.com', 'password': 'p'})
+    high_token = high_login.get_json()['token']
+    client.put('/api/profile', json={'skills': 'Python,Flask,Docker'},
+               headers={'Authorization': f'Bearer {high_token}'})
+
+    low_login = client.post('/api/login', json={'email': 'low@t.com', 'password': 'p'})
+    low_token = low_login.get_json()['token']
+    # low seeker has no matching skills
+
+    client.post(f'/api/jobs/{sample_job["id"]}/apply',
+                headers={'Authorization': f'Bearer {high_token}'})
+    client.post(f'/api/jobs/{sample_job["id"]}/apply',
+                headers={'Authorization': f'Bearer {low_token}'})
+
+    res = client.get(f'/api/job-posts/{sample_job["id"]}/applicants',
+                     headers={'Authorization': f'Bearer {employer_token}'})
+    applicants = res.get_json()
+    assert applicants[0]['match_score'] >= applicants[-1]['match_score']
+
+
+def test_seeker_cannot_view_applicants(client, seeker_token, sample_job):
+    res = client.get(
+        f'/api/job-posts/{sample_job["id"]}/applicants',
+        headers={'Authorization': f'Bearer {seeker_token}'}
+    )
+    assert res.status_code == 403
+
+
+# ── PATCH /api/applications/<id>/status ───────────────────────────────────
+
+def test_employer_can_shortlist(client, employer_token, seeker_token, sample_job):
+    apply_res = client.post(
+        f'/api/jobs/{sample_job["id"]}/apply',
+        headers={'Authorization': f'Bearer {seeker_token}'}
+    )
+    app_id = apply_res.get_json()['application']['id']
+
+    res = client.patch(
+        f'/api/applications/{app_id}/status',
+        json={'status': 'shortlisted'},
+        headers={'Authorization': f'Bearer {employer_token}'}
+    )
+    assert res.status_code == 200
+    assert res.get_json()['application']['status'] == 'shortlisted'
+
+
+def test_employer_can_unshortlist(client, employer_token, seeker_token, sample_job):
+    apply_res = client.post(
+        f'/api/jobs/{sample_job["id"]}/apply',
+        headers={'Authorization': f'Bearer {seeker_token}'}
+    )
+    app_id = apply_res.get_json()['application']['id']
+    # Shortlist first
+    client.patch(f'/api/applications/{app_id}/status',
+                 json={'status': 'shortlisted'},
+                 headers={'Authorization': f'Bearer {employer_token}'})
+    # Then revert to pending
+    res = client.patch(
+        f'/api/applications/{app_id}/status',
+        json={'status': 'pending'},
+        headers={'Authorization': f'Bearer {employer_token}'}
+    )
+    assert res.status_code == 200
+    assert res.get_json()['application']['status'] == 'pending'
+
+
+def test_invalid_status_rejected(client, employer_token, seeker_token, sample_job):
+    apply_res = client.post(
+        f'/api/jobs/{sample_job["id"]}/apply',
+        headers={'Authorization': f'Bearer {seeker_token}'}
+    )
+    app_id = apply_res.get_json()['application']['id']
+    res = client.patch(
+        f'/api/applications/{app_id}/status',
+        json={'status': 'hired'},
+        headers={'Authorization': f'Bearer {employer_token}'}
+    )
+    assert res.status_code == 400
+
+
+def test_employer_cannot_change_status_of_other_employers_application(
+        client, seeker_token, sample_job):
+    apply_res = client.post(
+        f'/api/jobs/{sample_job["id"]}/apply',
+        headers={'Authorization': f'Bearer {seeker_token}'}
+    )
+    app_id = apply_res.get_json()['application']['id']
+
+    # Second employer tries to shortlist
+    client.post('/api/signup', json={
+        'email': 'emp4@t.com', 'password': 'p', 'name': 'E4', 'role': 'employer'
+    })
+    r = client.post('/api/login', json={'email': 'emp4@t.com', 'password': 'p'})
+    token4 = r.get_json()['token']
+
+    res = client.patch(
+        f'/api/applications/{app_id}/status',
+        json={'status': 'shortlisted'},
+        headers={'Authorization': f'Bearer {token4}'}
+    )
+    assert res.status_code == 403
