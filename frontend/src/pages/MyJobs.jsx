@@ -1,5 +1,6 @@
 // frontend/src/pages/MyJobs.jsx
 import React, { useState, useEffect } from 'react';
+import { fetchEmployerJobs, updateJobPost, deleteJobPost } from '../api';
 import './MyJobs.css';
 
 export default function MyJobs({ user, navigate }) {
@@ -16,12 +17,8 @@ export default function MyJobs({ user, navigate }) {
 
   async function loadMyJobs() {
     setLoading(true);
-    const token = localStorage.getItem('token');
     try {
-      const res = await fetch('/api/employer/jobs', {
-        headers: { 'Authorization': `Bearer ${token}` },
-      });
-      const data = await res.json();
+      const data = await fetchEmployerJobs();
       setJobs(data.jobs || []);
     } catch {
       setMessage('Failed to load jobs.');
@@ -30,64 +27,33 @@ export default function MyJobs({ user, navigate }) {
   }
 
   async function handleArchive(jobId) {
-    const token = localStorage.getItem('token');
     try {
-      const res = await fetch(`/api/job-posts/${jobId}`, {
-        method: 'PUT',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${token}`,
-        },
-        body: JSON.stringify({ status: 'archived' }),
-      });
-      if (res.ok) {
-        setMessage('Job archived.');
-        loadMyJobs();
-      } else {
-        const data = await res.json();
-        setMessage(data.message || 'Failed to archive job.');
-      }
+      const { ok, data } = await updateJobPost(jobId, { status: 'archived' });
+      setMessage(ok ? 'Job archived.' : (data.message || 'Failed to archive job.'));
+      if (ok) loadMyJobs();
     } catch {
       setMessage('Network error. Could not archive job.');
     }
   }
 
   async function handlePublish(jobId) {
-    const token = localStorage.getItem('token');
     try {
-      const res = await fetch(`/api/job-posts/${jobId}`, {
-        method: 'PUT',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${token}`,
-        },
-        body: JSON.stringify({ status: 'active' }),
-      });
-      if (res.ok) {
-        setMessage('Job published.');
-        loadMyJobs();
-      } else {
-        const data = await res.json();
-        setMessage(data.message || 'Failed to publish job.');
-      }
+      const { ok, data } = await updateJobPost(jobId, { status: 'active' });
+      setMessage(ok ? 'Job published.' : (data.message || 'Failed to publish job.'));
+      if (ok) loadMyJobs();
     } catch {
       setMessage('Network error. Could not publish job.');
     }
   }
 
   async function handleDelete(jobId) {
-    const token = localStorage.getItem('token');
     try {
-      const res = await fetch(`/api/job-posts/${jobId}`, {
-        method: 'DELETE',
-        headers: { 'Authorization': `Bearer ${token}` },
-      });
-      if (res.ok) {
+      const { ok, data } = await deleteJobPost(jobId);
+      if (ok) {
         setMessage('Job posting deleted.');
         setDeleteConfirm(null);
         loadMyJobs();
       } else {
-        const data = await res.json();
         setMessage(data.message || 'Failed to delete job.');
       }
     } catch {
@@ -97,22 +63,13 @@ export default function MyJobs({ user, navigate }) {
   }
 
   async function handleUpdate(jobId, formData) {
-    const token = localStorage.getItem('token');
     try {
-      const res = await fetch(`/api/job-posts/${jobId}`, {
-        method: 'PUT',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${token}`,
-        },
-        body: JSON.stringify(formData),
-      });
-      if (res.ok) {
+      const { ok, data } = await updateJobPost(jobId, formData);
+      if (ok) {
         setMessage('Job posting updated.');
         setEditJob(null);
         loadMyJobs();
       } else {
-        const data = await res.json();
         setMessage(data.message || 'Failed to update job.');
       }
     } catch {

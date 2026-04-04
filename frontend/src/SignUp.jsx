@@ -7,6 +7,7 @@ export default function SignUp({ onSignUpSuccess, onSwitchToLogin }) {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
+  const [role, setRole] = useState('employee');
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
 
@@ -29,12 +30,12 @@ export default function SignUp({ onSignUpSuccess, onSwitchToLogin }) {
     setLoading(true);
 
     try {
-      const response = await fetch('http://localhost:5000/api/signup', {
+      const response = await fetch('/api/signup', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify({ name, email, password }),
+        body: JSON.stringify({ name, email, password, role }),
       });
 
       if (!response.ok) {
@@ -120,6 +121,19 @@ export default function SignUp({ onSignUpSuccess, onSwitchToLogin }) {
               required
               autoComplete="new-password"
             />
+          </div>
+
+          <div className="form-group">
+            <label htmlFor="role">I am a</label>
+            <select
+              id="role"
+              value={role}
+              onChange={(e) => setRole(e.target.value)}
+              style={{ width: '100%', padding: '10px 12px', borderRadius: '8px', border: '1.5px solid var(--color-border)', fontSize: '14px', fontFamily: 'var(--font)' }}
+            >
+              <option value="employee">Job Seeker</option>
+              <option value="employer">Employer</option>
+            </select>
           </div>
 
           {error && <p className="form-error" role="alert">{error}</p>}

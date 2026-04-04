@@ -321,7 +321,7 @@ function JobCard({ job, onClick, isEmployee }) {
 
 const JOB_TYPES = ['All', 'Full-time', 'Part-time', 'Contract', 'Remote'];
 
-export default function Jobs() {
+export default function Jobs({ user: userProp }) {
   const [jobs, setJobs] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
@@ -333,9 +333,11 @@ export default function Jobs() {
   const [minMatch, setMinMatch] = useState(0);
   const navigate = useNavigate();
 
-  // Determine role
-  const userRaw = localStorage.getItem('user');
-  const user = userRaw ? (() => { try { return JSON.parse(userRaw); } catch { return null; } })() : null;
+  // Use prop if available, fallback to localStorage
+  const user = userProp || (() => {
+    const raw = localStorage.getItem('user');
+    try { return raw ? JSON.parse(raw) : null; } catch { return null; }
+  })();
   const isEmployee = user ? user.role === 'employee' : false;
 
   useEffect(() => {

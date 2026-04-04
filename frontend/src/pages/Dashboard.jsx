@@ -1,5 +1,6 @@
 // frontend/src/pages/Dashboard.jsx
 import React, { useState, useEffect } from 'react';
+import { fetchEmployerDashboard } from '../api';
 import './Dashboard.css';
 
 const STATUS_CHIP_COLORS = {
@@ -15,18 +16,11 @@ export default function Dashboard({ navigate }) {
 
   useEffect(() => {
     async function loadDashboard() {
-      const token = localStorage.getItem('token');
       try {
-        const res = await fetch('/api/employer/dashboard', {
-          headers: { 'Authorization': `Bearer ${token}` },
-        });
-        if (res.ok) {
-          setStats(await res.json());
-        } else {
-          setError('Failed to load dashboard data.');
-        }
+        const data = await fetchEmployerDashboard();
+        setStats(data);
       } catch {
-        setError('Network error. Is the server running?');
+        setError('Failed to load dashboard data.');
       }
       setLoading(false);
     }

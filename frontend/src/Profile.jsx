@@ -1,5 +1,6 @@
 // src/Profile.jsx
 import React, { useState } from 'react';
+import { updateProfile, parseResumeText } from './api';
 import './Profile.css';
 
 export default function Profile({ user, onUpdateProfile, onBack }) {
@@ -59,23 +60,8 @@ export default function Profile({ user, onUpdateProfile, onBack }) {
     setLoading(true);
 
     try {
-      const token = localStorage.getItem('token');
       const payload = { ...formData, skills: skills.join(', ') };
-      const response = await fetch('http://localhost:5000/api/profile', {
-        method: 'PUT',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${token}`,
-        },
-        body: JSON.stringify(payload),
-      });
-
-      if (!response.ok) {
-        const data = await response.json();
-        throw new Error(data.message || 'Failed to update profile');
-      }
-
-      const updatedUser = await response.json();
+      const updatedUser = await updateProfile(payload);
       localStorage.setItem('user', JSON.stringify(updatedUser.user));
       onUpdateProfile(updatedUser.user);
       setSuccess('Profile updated successfully!');
@@ -92,19 +78,7 @@ export default function Profile({ user, onUpdateProfile, onBack }) {
     setError('');
     setSuccess('');
     try {
-      const token = localStorage.getItem('token');
-      const response = await fetch('http://localhost:5000/api/parse-resume-text', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${token}`,
-        },
-        body: JSON.stringify({ resumeText }),
-      });
-      const data = await response.json();
-      if (!response.ok) {
-        throw new Error(data.message || 'Failed to parse resume');
-      }
+      const data = await parseResumeText(resumeText);
 
       // Refresh form fields from populated profile
       const updatedUser = data.user;

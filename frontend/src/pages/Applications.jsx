@@ -1,5 +1,6 @@
 // src/pages/Applications.jsx
 import React, { useState, useEffect, useCallback } from 'react';
+import { Link } from 'react-router-dom';
 import { fetchMyApplications, withdrawApplication } from '../api';
 import './Applications.css';
 
@@ -244,7 +245,7 @@ export default function Applications() {
                 <h3 className="apps-empty-title">No {activeTab.toLowerCase()} applications</h3>
                 <p className="apps-empty-sub">
                   Switch to "All" to see all your applications, or{' '}
-                  <a href="/jobs" className="apps-empty-link">browse jobs</a> to apply.
+                  <Link to="/jobs" className="apps-empty-link">browse jobs</Link> to apply.
                 </p>
               </>
             ) : (
@@ -252,7 +253,7 @@ export default function Applications() {
                 <h3 className="apps-empty-title">No applications yet</h3>
                 <p className="apps-empty-sub">
                   You haven't applied for any jobs yet.{' '}
-                  <a href="/jobs" className="apps-empty-link">Browse open positions</a> to get started.
+                  <Link to="/jobs" className="apps-empty-link">Browse open positions</Link> to get started.
                 </p>
               </>
             )}

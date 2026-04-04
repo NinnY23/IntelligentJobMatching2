@@ -1,6 +1,7 @@
 // frontend/src/pages/Applicants.jsx
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { fetchJobApplicants, updateApplicationStatus } from '../api';
 import './Applicants.css';
 
 const SCORE_COLOR = score => {
@@ -52,38 +53,22 @@ export default function Applicants({ jobId }) {
 
   async function loadApplicants() {
     setLoading(true);
-    const token = localStorage.getItem('token');
     try {
-      const res = await fetch(`/api/job-posts/${jobId}/applicants`, {
-        headers: { 'Authorization': `Bearer ${token}` },
-      });
-      if (res.ok) {
-        setApplicants(await res.json());
-      } else {
-        setMessage('Failed to load applicants.');
-      }
+      const data = await fetchJobApplicants(jobId);
+      setApplicants(data);
     } catch {
-      setMessage('Network error loading applicants.');
+      setMessage('Failed to load applicants.');
     }
     setLoading(false);
   }
 
   async function handleStatusChange(appId, newStatus) {
-    const token = localStorage.getItem('token');
     try {
-      const res = await fetch(`/api/applications/${appId}/status`, {
-        method: 'PATCH',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${token}`,
-        },
-        body: JSON.stringify({ status: newStatus }),
-      });
-      if (res.ok) {
+      const { ok, data } = await updateApplicationStatus(appId, newStatus);
+      if (ok) {
         setMessage(`Candidate marked as ${newStatus}.`);
         loadApplicants();
       } else {
-        const data = await res.json();
         setMessage(data.message || 'Failed to update status.');
       }
     } catch {

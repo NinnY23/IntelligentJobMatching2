@@ -177,6 +177,34 @@ export async function updateApplicationStatus(appId, status) {
   return { ok: res.ok, data: await res.json() };
 }
 
+export async function fetchEmployerJobs() {
+  const token = localStorage.getItem('token');
+  const res = await fetch('/api/employer/jobs', {
+    headers: { 'Authorization': `Bearer ${token}` },
+  });
+  handleAuthError(res);
+  if (!res.ok) throw new Error('Failed to fetch jobs');
+  return res.json();
+}
+
+export async function parseResumeText(resumeText) {
+  const token = localStorage.getItem('token');
+  const res = await fetch('/api/parse-resume-text', {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      'Authorization': `Bearer ${token}`,
+    },
+    body: JSON.stringify({ resumeText }),
+  });
+  handleAuthError(res);
+  if (!res.ok) {
+    const data = await res.json();
+    throw new Error(data.message || 'Failed to parse resume');
+  }
+  return res.json();
+}
+
 export async function fetchEmployerDashboard() {
   const token = localStorage.getItem('token');
   const res = await fetch('/api/employer/dashboard', {

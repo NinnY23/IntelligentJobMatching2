@@ -15,7 +15,7 @@ import Dashboard from './pages/Dashboard';
 import Messages from './pages/Messages';
 import Navbar from './components/Navbar';
 import ErrorBoundary from './components/ErrorBoundary';
-import { fetchUnreadCount } from './api';
+import { fetchUnreadCount, logoutUser } from './api';
 
 function DashboardWrapper({ user }) {
   const navigate = useNavigate();
@@ -91,9 +91,8 @@ function AppContent() {
     setUser(updatedUser);
   };
 
-  const handleLogout = () => {
-    localStorage.removeItem('token');
-    localStorage.removeItem('user');
+  const handleLogout = async () => {
+    await logoutUser();
     setUser(null);
     navigate('/login');
   };
