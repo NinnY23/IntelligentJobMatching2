@@ -96,3 +96,21 @@ def test_delete_nonexistent_job(client, employer_token):
         headers={'Authorization': f'Bearer {employer_token}'}
     )
     assert res.status_code == 404
+
+
+def test_delete_job_cascades_to_applications(client, employer_token, seeker_token, sample_job):
+    # Seeker applies for the job
+    client.post(
+        f'/api/jobs/{sample_job["id"]}/apply',
+        headers={'Authorization': f'Bearer {seeker_token}'}
+    )
+    # Employer deletes the job
+    client.delete(
+        f'/api/job-posts/{sample_job["id"]}',
+        headers={'Authorization': f'Bearer {employer_token}'}
+    )
+    # Seeker's application list should now be empty
+    res = client.get('/api/applications',
+                     headers={'Authorization': f'Bearer {seeker_token}'})
+    apps = res.get_json()
+    assert not any(a['job_id'] == sample_job['id'] for a in apps)
