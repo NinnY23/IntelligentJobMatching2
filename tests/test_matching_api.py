@@ -142,3 +142,53 @@ def test_candidates_returns_list_for_own_job(client):
     )
     assert res.status_code == 200
     assert isinstance(res.get_json(), list)
+
+
+# ---------------------------------------------------------------------------
+# POST /api/job-posts preferred_skills persistence
+# ---------------------------------------------------------------------------
+
+def test_job_posts_includes_preferred_skills_in_response(client):
+    """Creating a job with preferred_skills must return that field in GET."""
+    emp_token = _signup_and_token(
+        client, 'emp_pref@test.com', 'pass', 'Emp Pref', 'employer'
+    )
+    client.post('/api/job-posts', json={
+        'position': 'Dev',
+        'company': 'Co',
+        'location': 'BKK',
+        'description': 'desc',
+        'required_skills': 'python',
+        'preferred_skills': 'docker'
+    }, headers={'Authorization': f'Bearer {emp_token}'})
+
+    res = client.get('/api/job-posts')
+    assert res.status_code == 200
+    jobs = res.get_json()
+    assert len(jobs) > 0
+    # At least one job in the response must have preferred_skills
+    assert any('preferred_skills' in j for j in jobs)
+    # The job we just created must have 'docker' as preferred
+    matching = [j for j in jobs if j.get('position') == 'Dev' and j.get('company') == 'Co']
+    assert len(matching) >= 1
+    assert matching[0]['preferred_skills'] == 'docker'
+
+
+def test_job_posts_preferred_skills_key_present_even_when_empty(client):
+    """Jobs created without preferred_skills must still have the key in response."""
+    emp_token = _signup_and_token(
+        client, 'emp_nopref@test.com', 'pass', 'Emp NoPref', 'employer'
+    )
+    client.post('/api/job-posts', json={
+        'position': 'Analyst',
+        'company': 'DataCo',
+        'location': 'BKK',
+        'description': 'desc',
+        'required_skills': 'sql',
+    }, headers={'Authorization': f'Bearer {emp_token}'})
+
+    res = client.get('/api/job-posts')
+    jobs = res.get_json()
+    matching = [j for j in jobs if j.get('position') == 'Analyst']
+    assert len(matching) >= 1
+    assert 'preferred_skills' in matching[0]

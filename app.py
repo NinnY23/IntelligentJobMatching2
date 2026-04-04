@@ -544,10 +544,7 @@ def get_job_posts():
         jobs = Job.query.all()
         jobs_list = [job.to_dict() for job in jobs]
         
-        return jsonify({
-            "total": len(jobs_list),
-            "jobs": jobs_list
-        }), 200
+        return jsonify(jobs_list), 200
     except Exception as e:
         return jsonify({"message": str(e)}), 500
 
