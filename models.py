@@ -24,6 +24,14 @@ class User(db.Model):
     
     # Relationship with Job posts (One User can have Many Jobs)
     job_posts = db.relationship('Job', backref='employer', lazy='dynamic', cascade='all, delete-orphan', foreign_keys='Job.employer_id')
+
+    applications = db.relationship(
+        'Application',
+        backref='applicant',
+        lazy='dynamic',
+        cascade='all, delete-orphan',
+        foreign_keys='Application.user_id'
+    )
     
     def to_dict(self):
         """Convert user to dictionary for JSON serialization."""
@@ -112,3 +120,33 @@ class Job(db.Model):
         if not self.preferred_skills:
             return []
         return [s.strip() for s in self.preferred_skills.split(',') if s.strip()]
+
+    applications = db.relationship(
+        'Application',
+        backref='job_rel',
+        lazy='dynamic',
+        cascade='all, delete-orphan',
+        foreign_keys='Application.job_id'
+    )
+
+
+class Application(db.Model):
+    __tablename__ = 'applications'
+
+    id = db.Column(db.Integer, primary_key=True)
+    job_id = db.Column(db.Integer, db.ForeignKey('jobs.id', ondelete='CASCADE'), nullable=False)
+    user_id = db.Column(db.Integer, db.ForeignKey('users.id', ondelete='CASCADE'), nullable=False)
+    status = db.Column(db.String(20), default='pending')  # 'pending', 'shortlisted', 'withdrawn'
+    created_at = db.Column(db.DateTime, nullable=False, default=datetime.now)
+
+    # Unique constraint: one application per user per job
+    __table_args__ = (db.UniqueConstraint('job_id', 'user_id', name='uq_application'),)
+
+    def to_dict(self):
+        return {
+            'id': self.id,
+            'job_id': self.job_id,
+            'user_id': self.user_id,
+            'status': self.status,
+            'created_at': self.created_at.isoformat()
+        }
