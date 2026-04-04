@@ -12,6 +12,8 @@ import fitz  # PyMuPDF
 import re
 import spacy
 import bcrypt
+import jwt as pyjwt
+from datetime import timedelta
 from models import db, User, Job, Application, Message
 from sqlalchemy import or_, and_
 import os
@@ -143,24 +145,22 @@ def require_role(required_role):
             auth_header = request.headers.get('Authorization')
             if not auth_header or not auth_header.startswith('Bearer '):
                 return jsonify({"message": "Unauthorized"}), 401
-            
+
             token = auth_header.split(' ')[1]
-            # Extract email from token (format: token_email_timestamp)
-            # Use join to handle emails that contain underscores
-            parts = token.split('_')
-            if len(parts) < 3:
+            try:
+                payload = pyjwt.decode(token, app.config['SECRET_KEY'], algorithms=['HS256'])
+            except pyjwt.ExpiredSignatureError:
+                return jsonify({"message": "Token expired"}), 401
+            except pyjwt.InvalidTokenError:
                 return jsonify({"message": "Invalid token"}), 401
 
-            email = '_'.join(parts[1:-1])
-            user = User.query.filter_by(email=email).first()
-            
+            user = User.query.get(payload.get('user_id'))
             if not user:
                 return jsonify({"message": "User not found"}), 404
-            
+
             if user.role != required_role:
                 return jsonify({"message": f"Access denied. This endpoint requires '{required_role}' role"}), 403
-            
-            # Pass user to the route handler
+
             return f(user, *args, **kwargs)
         return decorated_function
     return decorator
@@ -229,9 +229,18 @@ def signup():
         db.session.add(new_user)
         db.session.commit()
         
-        # Generate fake token
-        token = f"token_{email}_{datetime.now().timestamp()}"
-        
+        # Generate JWT token (24-hour expiry)
+        token = pyjwt.encode(
+            {
+                'user_id': new_user.id,
+                'email': new_user.email,
+                'role': new_user.role,
+                'exp': datetime.utcnow() + timedelta(hours=24)
+            },
+            app.config['SECRET_KEY'],
+            algorithm='HS256'
+        )
+
         return jsonify({
             "token": token,
             "user": new_user.to_dict()
@@ -259,9 +268,18 @@ def login():
         ):
             return jsonify({"message": "Invalid email or password"}), 401
         
-        # Generate fake token
-        token = f"token_{email}_{datetime.now().timestamp()}"
-        
+        # Generate JWT token (24-hour expiry)
+        token = pyjwt.encode(
+            {
+                'user_id': user.id,
+                'email': user.email,
+                'role': user.role,
+                'exp': datetime.utcnow() + timedelta(hours=24)
+            },
+            app.config['SECRET_KEY'],
+            algorithm='HS256'
+        )
+
         return jsonify({
             "token": token,
             "user": user.to_dict(),
@@ -297,23 +315,9 @@ def forgot_password():
 @app.route("/api/profile", methods=["GET"])
 def get_profile():
     try:
-        auth_header = request.headers.get('Authorization')
-        if not auth_header or not auth_header.startswith('Bearer '):
-            return jsonify({"message": "Unauthorized"}), 401
-        
-        token = auth_header.split(' ')[1]
-        # Extract email from token (format: token_email_timestamp)
-        parts = token.split('_')
-        if len(parts) < 3:
-            return jsonify({"message": "Invalid token"}), 401
-
-        email = '_'.join(parts[1:-1])
-
-        # Query user from database
-        user = User.query.filter_by(email=email).first()
-
-        if not user:
-            return jsonify({"message": "User not found"}), 404
+        user, err = get_current_user_or_401()
+        if err:
+            return err
 
         return jsonify({
             "user": user.to_dict()
@@ -324,23 +328,9 @@ def get_profile():
 @app.route("/api/profile", methods=["PUT"])
 def update_profile():
     try:
-        auth_header = request.headers.get('Authorization')
-        if not auth_header or not auth_header.startswith('Bearer '):
-            return jsonify({"message": "Unauthorized"}), 401
-        
-        token = auth_header.split(' ')[1]
-        # Extract email from token
-        parts = token.split('_')
-        if len(parts) < 3:
-            return jsonify({"message": "Invalid token"}), 401
-
-        email = '_'.join(parts[1:-1])
-
-        # Query user from database
-        user = User.query.filter_by(email=email).first()
-
-        if not user:
-            return jsonify({"message": "User not found"}), 404
+        user, err = get_current_user_or_401()
+        if err:
+            return err
 
         data = request.json
 
@@ -365,22 +355,9 @@ def update_profile():
 @app.route("/api/upload-resume", methods=["POST"])
 def upload_resume():
     try:
-        auth_header = request.headers.get('Authorization')
-        if not auth_header or not auth_header.startswith('Bearer '):
-            return jsonify({"message": "Unauthorized"}), 401
-        
-        token = auth_header.split(' ')[1]
-        parts = token.split('_')
-        if len(parts) < 3:
-            return jsonify({"message": "Invalid token"}), 401
-
-        email = '_'.join(parts[1:-1])
-
-        # Query user from database
-        user = User.query.filter_by(email=email).first()
-
-        if not user:
-            return jsonify({"message": "User not found"}), 404
+        user, err = get_current_user_or_401()
+        if err:
+            return err
 
         if 'resume' not in request.files:
             return jsonify({"message": "No file provided"}), 400
@@ -428,22 +405,9 @@ def upload_resume():
 @app.route("/api/parse-resume-text", methods=["POST"])
 def parse_resume_text():
     try:
-        auth_header = request.headers.get('Authorization')
-        if not auth_header or not auth_header.startswith('Bearer '):
-            return jsonify({"message": "Unauthorized"}), 401
-        
-        token = auth_header.split(' ')[1]
-        parts = token.split('_')
-        if len(parts) < 3:
-            return jsonify({"message": "Invalid token"}), 401
-
-        email = '_'.join(parts[1:-1])
-
-        # Query user from database
-        user = User.query.filter_by(email=email).first()
-
-        if not user:
-            return jsonify({"message": "User not found"}), 404
+        user, err = get_current_user_or_401()
+        if err:
+            return err
 
         data = request.json
         resume_text = data.get('resumeText', '')
@@ -488,23 +452,10 @@ def match_jobs():
 @app.route("/api/job-posts", methods=["POST"])
 def create_job_post():
     try:
-        auth_header = request.headers.get('Authorization')
-        if not auth_header or not auth_header.startswith('Bearer '):
-            return jsonify({"message": "Unauthorized"}), 401
-        
-        token = auth_header.split(' ')[1]
-        parts = token.split('_')
-        if len(parts) < 3:
-            return jsonify({"message": "Invalid token"}), 401
+        employer, err = get_current_user_or_401()
+        if err:
+            return err
 
-        employer_email = '_'.join(parts[1:-1])
-
-        # Query employer from database
-        employer = User.query.filter_by(email=employer_email).first()
-        
-        if not employer:
-            return jsonify({"message": "User not found"}), 404
-        
         data = request.json
         
         # Validate required fields
@@ -562,19 +513,9 @@ def get_jobs_alias():
 @app.route('/api/jobs/matches', methods=['GET'])
 def get_job_matches():
     """Return jobs ranked by Prolog match score for the authenticated employee."""
-    auth_header = request.headers.get('Authorization')
-    if not auth_header or not auth_header.startswith('Bearer '):
-        return jsonify({"message": "Unauthorized"}), 401
-
-    token = auth_header.split(' ')[1]
-    parts = token.split('_')
-    if len(parts) < 3:
-        return jsonify({"message": "Invalid token"}), 401
-
-    email = '_'.join(parts[1:-1])
-    user = User.query.filter_by(email=email).first()
-    if not user:
-        return jsonify({"message": "User not found"}), 404
+    user, err = get_current_user_or_401()
+    if err:
+        return err
 
     if user.role != 'employee':
         return jsonify({"message": "Only job seekers can view job matches"}), 403
@@ -760,15 +701,9 @@ def get_employer_jobs(user):
 @app.route('/api/jobs/<int:job_id>/apply', methods=['POST'])
 def apply_for_job(job_id):
     """Job seeker submits an application for a job."""
-    auth_header = request.headers.get('Authorization')
-    if not auth_header or not auth_header.startswith('Bearer '):
-        return jsonify({"message": "Unauthorized"}), 401
-    token = auth_header.split(' ')[1]
-    parts = token.split('_')
-    email = '_'.join(parts[1:-1]) if len(parts) >= 3 else (parts[1] if len(parts) >= 2 else None)
-    user = User.query.filter_by(email=email).first() if email else None
-    if not user:
-        return jsonify({"message": "Unauthorized"}), 401
+    user, err = get_current_user_or_401()
+    if err:
+        return err
     if user.role != 'employee':
         return jsonify({"message": "Only job seekers can apply"}), 403
 
@@ -790,15 +725,9 @@ def apply_for_job(job_id):
 @app.route('/api/applications', methods=['GET'])
 def get_my_applications():
     """Return all applications belonging to the logged-in job seeker, with job details."""
-    auth_header = request.headers.get('Authorization')
-    if not auth_header or not auth_header.startswith('Bearer '):
-        return jsonify({"message": "Unauthorized"}), 401
-    token = auth_header.split(' ')[1]
-    parts = token.split('_')
-    email = '_'.join(parts[1:-1]) if len(parts) >= 3 else (parts[1] if len(parts) >= 2 else None)
-    user = User.query.filter_by(email=email).first() if email else None
-    if not user:
-        return jsonify({"message": "Unauthorized"}), 401
+    user, err = get_current_user_or_401()
+    if err:
+        return err
 
     apps = Application.query.filter_by(user_id=user.id).all()
     result = []
@@ -814,15 +743,9 @@ def get_my_applications():
 @app.route('/api/applications/<int:app_id>', methods=['DELETE'])
 def withdraw_application(app_id):
     """Job seeker withdraws an application (not allowed when shortlisted)."""
-    auth_header = request.headers.get('Authorization')
-    if not auth_header or not auth_header.startswith('Bearer '):
-        return jsonify({"message": "Unauthorized"}), 401
-    token = auth_header.split(' ')[1]
-    parts = token.split('_')
-    email = '_'.join(parts[1:-1]) if len(parts) >= 3 else (parts[1] if len(parts) >= 2 else None)
-    user = User.query.filter_by(email=email).first() if email else None
-    if not user:
-        return jsonify({"message": "Unauthorized"}), 401
+    user, err = get_current_user_or_401()
+    if err:
+        return err
 
     application = Application.query.filter_by(id=app_id, user_id=user.id).first()
     if not application:
@@ -977,16 +900,36 @@ def allowed_file(filename):
 
 
 def get_current_user(request):
-    """Extract user from Bearer token. Returns User or None."""
+    """Extract user from JWT Bearer token. Returns User or None."""
     auth = request.headers.get('Authorization', '')
     if not auth.startswith('Bearer '):
         return None
     token = auth.split(' ')[1]
-    parts = token.split('_')
-    if len(parts) < 3:
+    try:
+        payload = pyjwt.decode(token, app.config['SECRET_KEY'], algorithms=['HS256'])
+        return User.query.get(payload['user_id'])
+    except pyjwt.ExpiredSignatureError:
         return None
-    email = '_'.join(parts[1:-1])
-    return User.query.filter_by(email=email).first()
+    except pyjwt.InvalidTokenError:
+        return None
+
+
+def get_current_user_or_401():
+    """Extract user from JWT. Returns (user, None) or (None, error_response)."""
+    auth = request.headers.get('Authorization', '')
+    if not auth.startswith('Bearer '):
+        return None, (jsonify({"message": "Unauthorized"}), 401)
+    token = auth.split(' ')[1]
+    try:
+        payload = pyjwt.decode(token, app.config['SECRET_KEY'], algorithms=['HS256'])
+    except pyjwt.ExpiredSignatureError:
+        return None, (jsonify({"message": "Token expired"}), 401)
+    except pyjwt.InvalidTokenError:
+        return None, (jsonify({"message": "Invalid token"}), 401)
+    user = User.query.get(payload.get('user_id'))
+    if not user:
+        return None, (jsonify({"message": "User not found"}), 404)
+    return user, None
 
 
 @app.route('/api/messages', methods=['GET'])
