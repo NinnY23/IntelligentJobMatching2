@@ -73,15 +73,13 @@ export async function applyForJob(jobId) {
   const token = localStorage.getItem('token');
   const res = await fetch(`/api/jobs/${jobId}/apply`, {
     method: 'POST',
-    headers: {
-      'Authorization': `Bearer ${token}`,
-    },
+    headers: { 'Authorization': `Bearer ${token}` },
   });
-
   if (!res.ok) {
-    throw new Error('Failed to apply for job');
+    const err = new Error(res.status === 409 ? 'Already applied' : 'Failed to apply');
+    err.status = res.status;
+    throw err;
   }
-
   return res.json();
 }
 

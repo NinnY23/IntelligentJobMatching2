@@ -87,7 +87,7 @@ function Toast({ message, type, onClose }) {
   return (
     <div className={`jobs-toast jobs-toast--${type}`}>
       <span>{message}</span>
-      <button className="jobs-toast-close" onClick={onClose}>×</button>
+      <button className="jobs-toast-close" onClick={onClose} aria-label="Close">×</button>
     </div>
   );
 }
@@ -113,9 +113,7 @@ function JobModal({ job, onClose, isEmployee }) {
       await applyForJob(job.id);
       setToast({ message: 'Application submitted successfully!', type: 'success' });
     } catch (err) {
-      // applyForJob throws on non-ok — check if 409 via message or re-check
-      const msg = err.message || '';
-      if (msg.includes('409') || msg.toLowerCase().includes('already')) {
+      if (err.status === 409) {
         setToast({ message: 'You have already applied for this job.', type: 'info' });
       } else {
         setToast({ message: 'Failed to apply. Please try again.', type: 'error' });
@@ -132,7 +130,7 @@ function JobModal({ job, onClose, isEmployee }) {
 
   return (
     <div className="jobs-modal-backdrop" onClick={handleBackdropClick}>
-      <div className="jobs-modal" role="dialog" aria-modal="true">
+      <div className="jobs-modal" role="dialog" aria-modal="true" aria-labelledby="jobs-modal-title">
         <button className="jobs-modal-close" onClick={onClose} aria-label="Close">×</button>
 
         {toast && (
@@ -145,7 +143,7 @@ function JobModal({ job, onClose, isEmployee }) {
 
         <div className="jobs-modal-header">
           <div>
-            <h2 className="jobs-modal-title">{job.position}</h2>
+            <h2 id="jobs-modal-title" className="jobs-modal-title">{job.position}</h2>
             <p className="jobs-modal-company">{job.company}</p>
           </div>
           {job.match_score != null && <MatchBadge score={job.match_score} />}
@@ -248,7 +246,7 @@ function JobCard({ job, onClick, isEmployee }) {
   const displaySkills = requiredSkills.slice(0, 4);
 
   return (
-    <article className="jobs-card" onClick={onClick} tabIndex={0} onKeyDown={(e) => e.key === 'Enter' && onClick()}>
+    <article className="jobs-card" role="button" onClick={onClick} tabIndex={0} onKeyDown={(e) => (e.key === 'Enter' || e.key === ' ') && onClick()}>
       <div className="jobs-card-header">
         <div className="jobs-card-title-group">
           <h3 className="jobs-card-title">{job.position}</h3>
@@ -317,6 +315,7 @@ export default function Jobs() {
         }
         setJobs(Array.isArray(data) ? data : []);
       } catch (err) {
+        console.error(err);
         setError('Failed to load jobs. Please try again.');
       } finally {
         setLoading(false);
