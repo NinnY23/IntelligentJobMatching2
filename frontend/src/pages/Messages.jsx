@@ -88,7 +88,7 @@ export default function Messages({ user }) {
   }
 
   return (
-    <div className="messages-page">
+    <div className={`messages-page${activePartnerId ? ' has-active' : ''}`}>
       <div className="conversations-panel">
         <div className="conversations-header"><h3>Messages</h3></div>
         {conversations.length === 0 && (
@@ -123,6 +123,13 @@ export default function Messages({ user }) {
           <div className="thread-empty">Select a conversation to start messaging.</div>
         ) : (
           <>
+            <button
+              className="thread-back-btn"
+              onClick={() => setActivePartnerId(null)}
+              aria-label="Back to conversations"
+            >
+              ← Back
+            </button>
             <div className="thread-messages">
               {thread.map(msg => {
                 const isMine = msg.sender_id === user.id;

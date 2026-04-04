@@ -224,3 +224,43 @@
   color: var(--color-muted);
   margin-left: auto;
 }
+
+.thread-back-btn {
+  display: none;
+}
+
+@media (max-width: 768px) {
+  .messages-page {
+    grid-template-columns: 1fr;
+    grid-template-rows: 1fr;
+  }
+
+  .messages-page:not(.has-active) .conversations-panel {
+    display: block;
+  }
+  .messages-page:not(.has-active) .thread-panel {
+    display: none;
+  }
+
+  .messages-page.has-active .conversations-panel {
+    display: none;
+  }
+  .messages-page.has-active .thread-panel {
+    display: flex;
+  }
+
+  .thread-back-btn {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    padding: 10px 16px;
+    border: none;
+    background: #fff;
+    border-bottom: 1px solid var(--color-border);
+    font-size: 14px;
+    font-weight: 600;
+    color: var(--color-primary);
+    cursor: pointer;
+    font-family: var(--font);
+  }
+}
