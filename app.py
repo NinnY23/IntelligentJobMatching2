@@ -12,8 +12,10 @@ import fitz  # PyMuPDF
 import re
 import spacy
 import bcrypt
-from models import db, User, Job, Application
+from models import db, User, Job, Application, Message
 import os
+import uuid
+from werkzeug.utils import secure_filename
 from prolog_engine import rank_candidates, rank_jobs as prolog_rank_jobs
 
 # Common skills to look for in resumes
@@ -958,6 +960,183 @@ def employer_dashboard(employer):
         'total_shortlisted': total_shortlisted,
         'recent_applications': recent,
     }), 200
+
+
+ALLOWED_EXTENSIONS = {'png', 'jpg', 'jpeg', 'gif', 'pdf', 'doc', 'docx'}
+MAX_FILE_SIZE = 10 * 1024 * 1024  # 10MB
+
+
+def allowed_file(filename):
+    return '.' in filename and filename.rsplit('.', 1)[1].lower() in ALLOWED_EXTENSIONS
+
+
+def get_current_user(request):
+    """Extract user from Bearer token. Returns User or None."""
+    auth = request.headers.get('Authorization', '')
+    if not auth.startswith('Bearer '):
+        return None
+    token = auth.split(' ')[1]
+    parts = token.split('_')
+    if len(parts) < 3:
+        return None
+    email = '_'.join(parts[1:-1])
+    return User.query.filter_by(email=email).first()
+
+
+@app.route('/api/messages', methods=['GET'])
+def get_conversations():
+    user = get_current_user(request)
+    if not user:
+        return jsonify({"message": "Unauthorized"}), 401
+
+    from sqlalchemy import or_
+    msgs = Message.query.filter(
+        or_(Message.sender_id == user.id, Message.receiver_id == user.id)
+    ).order_by(Message.created_at.desc()).all()
+
+    partners = {}
+    for m in msgs:
+        partner_id = m.receiver_id if m.sender_id == user.id else m.sender_id
+        if partner_id not in partners:
+            partner = User.query.get(partner_id)
+            unread = Message.query.filter_by(
+                sender_id=partner_id, receiver_id=user.id, read=False
+            ).count()
+            partners[partner_id] = {
+                'partner_id': partner_id,
+                'partner_name': partner.name if partner else 'Unknown',
+                'last_message': m.body or f'[{m.attachment_name}]',
+                'last_message_at': m.created_at.isoformat(),
+                'unread_count': unread
+            }
+    return jsonify(list(partners.values())), 200
+
+
+@app.route('/api/messages/<int:other_user_id>', methods=['GET'])
+def get_thread(other_user_id):
+    user = get_current_user(request)
+    if not user:
+        return jsonify({"message": "Unauthorized"}), 401
+
+    from sqlalchemy import or_, and_
+    after = request.args.get('after')
+
+    query = Message.query.filter(
+        or_(
+            and_(Message.sender_id == user.id, Message.receiver_id == other_user_id),
+            and_(Message.sender_id == other_user_id, Message.receiver_id == user.id)
+        )
+    )
+    if after:
+        from datetime import datetime as dt
+        try:
+            after_dt = dt.fromisoformat(after)
+            query = query.filter(Message.created_at > after_dt)
+        except ValueError:
+            pass
+
+    messages = query.order_by(Message.created_at.asc()).paginate(
+        page=1, per_page=50, error_out=False
+    ).items
+    return jsonify([m.to_dict() for m in messages]), 200
+
+
+@app.route('/api/messages/<int:other_user_id>', methods=['POST'])
+def send_message(other_user_id):
+    user = get_current_user(request)
+    if not user:
+        return jsonify({"message": "Unauthorized"}), 401
+
+    receiver = User.query.get(other_user_id)
+    if not receiver:
+        return jsonify({"message": "Recipient not found"}), 404
+
+    from sqlalchemy import or_
+    has_connection = Application.query.filter(
+        or_(
+            Application.user_id == user.id,
+            Application.user_id == other_user_id
+        )
+    ).join(Job).filter(
+        or_(
+            Job.employer_id == user.id,
+            Job.employer_id == other_user_id
+        )
+    ).first()
+    if not has_connection:
+        return jsonify({"message": "You can only message users connected through a job application"}), 403
+
+    body = request.form.get('body', '')
+    attachment_path = ''
+    attachment_name = ''
+    attachment_type = ''
+
+    if 'attachment' in request.files:
+        file = request.files['attachment']
+        if file and file.filename and allowed_file(file.filename):
+            file.seek(0, 2)
+            size = file.tell()
+            file.seek(0)
+            if size > MAX_FILE_SIZE:
+                return jsonify({"message": "File too large. Max 10MB."}), 400
+            upload_dir = os.path.join(app.config['UPLOAD_FOLDER'], 'messages', str(user.id))
+            os.makedirs(upload_dir, exist_ok=True)
+            ext = file.filename.rsplit('.', 1)[1].lower()
+            filename = f"{uuid.uuid4().hex}.{ext}"
+            file_path = os.path.join(upload_dir, filename)
+            file.save(file_path)
+            attachment_path = f"messages/{user.id}/{filename}"
+            attachment_name = secure_filename(file.filename)
+            attachment_type = file.content_type or f"application/{ext}"
+
+    if not body and not attachment_path:
+        return jsonify({"message": "Message must have text or attachment"}), 400
+
+    msg = Message(
+        sender_id=user.id,
+        receiver_id=other_user_id,
+        body=body,
+        attachment_path=attachment_path,
+        attachment_name=attachment_name,
+        attachment_type=attachment_type
+    )
+    db.session.add(msg)
+    db.session.commit()
+    return jsonify({"message": "Sent", "data": msg.to_dict()}), 201
+
+
+@app.route('/api/messages/<int:other_user_id>/read', methods=['PATCH'])
+def mark_read(other_user_id):
+    user = get_current_user(request)
+    if not user:
+        return jsonify({"message": "Unauthorized"}), 401
+    Message.query.filter_by(
+        sender_id=other_user_id, receiver_id=user.id, read=False
+    ).update({'read': True})
+    db.session.commit()
+    return jsonify({"message": "Marked as read"}), 200
+
+
+@app.route('/api/uploads/messages/<path:filepath>', methods=['GET'])
+def serve_message_file(filepath):
+    user = get_current_user(request)
+    if not user:
+        return jsonify({"message": "Unauthorized"}), 401
+    parts_path = filepath.split('/')
+    if len(parts_path) >= 1:
+        try:
+            sender_id = int(parts_path[0])
+            if sender_id != user.id:
+                msg = Message.query.filter_by(
+                    attachment_path=f"messages/{filepath}", receiver_id=user.id
+                ).first()
+                if not msg:
+                    return jsonify({"message": "Forbidden"}), 403
+        except (ValueError, IndexError):
+            return jsonify({"message": "Invalid path"}), 400
+    from flask import send_from_directory
+    upload_folder = app.config['UPLOAD_FOLDER']
+    return send_from_directory(upload_folder, filepath)
 
 
 if __name__ == "__main__":
