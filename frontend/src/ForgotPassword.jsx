@@ -15,7 +15,7 @@ export default function ForgotPassword({ onSwitchToLogin }) {
     setLoading(true);
 
     try {
-      const response = await fetch('http://localhost:5000/api/forgot-password', {
+      const response = await fetch('/api/forgot-password', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -37,7 +37,7 @@ export default function ForgotPassword({ onSwitchToLogin }) {
         throw new Error(errorMessage);
       }
 
-      setSuccess('Password reset link has been sent to your email. Please check your inbox.');
+      setSuccess('Password reset link has been generated. In development mode, check the server console for the reset URL.');
       setEmail('');
     } catch (err) {
       setError(err.message || 'Failed to process request. Please try again.');

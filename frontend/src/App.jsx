@@ -6,6 +6,7 @@ import Profile from './Profile';
 import Login from './Login';
 import SignUp from './SignUp';
 import ForgotPassword from './ForgotPassword';
+import ResetPassword from './pages/ResetPassword';
 import Jobs from './pages/Jobs';
 import Applications from './pages/Applications';
 import MyJobs from './pages/MyJobs';
@@ -107,6 +108,7 @@ function AppContent() {
         <Route path="/login" element={<Login onLoginSuccess={handleLoginSuccess} onSwitchToSignUp={() => navigate('/signup')} onSwitchToForgotPassword={() => navigate('/forgot-password')} />} />
         <Route path="/signup" element={<SignUp onSignUpSuccess={handleSignUpSuccess} onSwitchToLogin={() => navigate('/login')} />} />
         <Route path="/forgot-password" element={<ForgotPassword onSwitchToLogin={() => navigate('/login')} />} />
+        <Route path="/reset-password" element={<ResetPassword onSwitchToLogin={() => navigate('/login')} />} />
         <Route path="*" element={<Navigate to="/login" replace />} />
       </Routes>
     );

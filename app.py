@@ -37,6 +37,9 @@ EDUCATION_KEYWORDS = [
     'graduation', 'postgraduate', 'undergraduate', 'b.sc', 'm.sc'
 ]
 
+# In-memory store for password reset tokens {token: {email, expires_at}}
+password_resets = {}
+
 # Load spaCy model (optional, with error handling)
 try:
     nlp = spacy.load('en_core_web_sm')
@@ -292,23 +295,72 @@ def forgot_password():
     try:
         data = request.json
         email = data.get('email')
-        
+
         if not email:
             return jsonify({"message": "Email is required"}), 400
-        
-        # Check if user exists in database
+
         user = User.query.filter_by(email=email).first()
-        
+
         if not user:
-            # For security, don't reveal if email exists
             return jsonify({"message": "If the email exists, a reset link has been sent"}), 200
-        
-        # In production: Generate secure token and send email
-        reset_token = f"reset_{email}_{datetime.now().timestamp()}"
-        # Note: In production, store this in database with expiration time
-        
-        return jsonify({"message": "If the email exists, a reset link has been sent"}), 200
+
+        import secrets
+        reset_token = secrets.token_urlsafe(32)
+        password_resets[reset_token] = {
+            'email': email,
+            'expires_at': datetime.utcnow() + timedelta(hours=1)
+        }
+
+        print(f"\n{'='*50}")
+        print(f"PASSWORD RESET TOKEN for {email}")
+        print(f"Token: {reset_token}")
+        print(f"Reset URL: http://localhost:3000/reset-password?token={reset_token}")
+        print(f"Expires: {password_resets[reset_token]['expires_at'].isoformat()}")
+        print(f"{'='*50}\n")
+
+        return jsonify({
+            "message": "If the email exists, a reset link has been sent",
+            "reset_token": reset_token
+        }), 200
     except Exception as e:
+        return jsonify({"message": str(e)}), 500
+
+@app.route("/api/reset-password", methods=["POST"])
+def reset_password():
+    try:
+        data = request.json
+        token = data.get('token')
+        new_password = data.get('new_password')
+
+        if not token or not new_password:
+            return jsonify({"message": "Token and new password are required"}), 400
+
+        if len(new_password) < 4:
+            return jsonify({"message": "Password must be at least 4 characters"}), 400
+
+        reset_data = password_resets.get(token)
+        if not reset_data:
+            return jsonify({"message": "Invalid or expired reset token"}), 400
+
+        if datetime.utcnow() > reset_data['expires_at']:
+            del password_resets[token]
+            return jsonify({"message": "Reset token has expired"}), 400
+
+        user = User.query.filter_by(email=reset_data['email']).first()
+        if not user:
+            return jsonify({"message": "User not found"}), 404
+
+        user.password = bcrypt.hashpw(
+            new_password.encode('utf-8'),
+            bcrypt.gensalt()
+        ).decode('utf-8')
+
+        db.session.commit()
+        del password_resets[token]
+
+        return jsonify({"message": "Password reset successfully"}), 200
+    except Exception as e:
+        db.session.rollback()
         return jsonify({"message": str(e)}), 500
 
 @app.route("/api/profile", methods=["GET"])
