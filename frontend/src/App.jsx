@@ -1,12 +1,13 @@
 // src/App.jsx
 import React, { useState, useEffect } from 'react';
 import { BrowserRouter as Router, Routes, Route, Navigate, useNavigate } from 'react-router-dom';
-import JobMatch from './JobMatch';
 import CreateJobPost from './CreateJobPost';
 import Profile from './Profile';
 import Login from './Login';
 import SignUp from './SignUp';
 import ForgotPassword from './ForgotPassword';
+import Jobs from './pages/Jobs';
+import Applications from './pages/Applications';
 import './App.css';
 
 function Header({ user, currentPage, onLogout, navigate }) {
@@ -14,19 +15,29 @@ function Header({ user, currentPage, onLogout, navigate }) {
     <header>
       <h1>Intelligent Job Matching</h1>
       <div className="nav-links">
-        <button 
+        <button
           className={`nav-link ${currentPage === 'jobs' ? 'active' : ''}`}
           onClick={() => navigate('/jobs')}
         >
           Browse Jobs
         </button>
-        <button 
-          className={`nav-link ${currentPage === 'create-job' ? 'active' : ''}`}
-          onClick={() => navigate('/create-job')}
-        >
-          Post a Job
-        </button>
-        <button 
+        {user?.role === 'employee' && (
+          <button
+            className={`nav-link ${currentPage === 'applications' ? 'active' : ''}`}
+            onClick={() => navigate('/applications')}
+          >
+            My Applications
+          </button>
+        )}
+        {user?.role === 'employer' && (
+          <button
+            className={`nav-link ${currentPage === 'create-job' ? 'active' : ''}`}
+            onClick={() => navigate('/create-job')}
+          >
+            Post a Job
+          </button>
+        )}
+        <button
           className={`nav-link ${currentPage === 'profile' ? 'active' : ''}`}
           onClick={() => navigate('/profile')}
         >
@@ -114,7 +125,13 @@ function AppContent() {
         <Route path="/jobs" element={
           <>
             <Header user={user} currentPage="jobs" onLogout={handleLogout} navigate={navigate} />
-            <JobMatch />
+            <Jobs user={user} />
+          </>
+        } />
+        <Route path="/applications" element={
+          <>
+            <Header user={user} currentPage="applications" onLogout={handleLogout} navigate={navigate} />
+            <Applications user={user} />
           </>
         } />
         <Route path="/profile" element={
