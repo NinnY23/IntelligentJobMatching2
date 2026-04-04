@@ -80,6 +80,144 @@
 .apps-dialog p { color: var(--color-muted); font-size: 14px; margin-bottom: 24px; }
 .apps-dialog-actions { display: flex; gap: 12px; justify-content: center; }
 
+/* Table wrapper */
+.apps-table-wrap { overflow-x: auto; }
+
+/* Dialog icon */
+.apps-dialog-icon { margin-bottom: 16px; }
+
+/* Error / warning banners */
+.apps-error {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 12px 16px;
+  border-radius: var(--radius);
+  background: var(--color-danger-light);
+  color: var(--color-danger);
+  border: 1px solid #fca5a5;
+  font-size: 14px;
+  margin-bottom: 16px;
+}
+.apps-error--warn {
+  background: #fffbeb;
+  color: #92400e;
+  border-color: #fcd34d;
+}
+.apps-error-retry {
+  margin-left: auto;
+  background: none;
+  border: 1.5px solid var(--color-danger);
+  color: var(--color-danger);
+  border-radius: 6px;
+  padding: 3px 12px;
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+  font-family: var(--font);
+  transition: background 0.15s, color 0.15s;
+}
+.apps-error-retry:hover { background: var(--color-danger); color: #fff; }
+.apps-error-close {
+  margin-left: auto;
+  background: none;
+  border: none;
+  font-size: 18px;
+  line-height: 1;
+  cursor: pointer;
+  color: #92400e;
+  padding: 0 4px;
+  opacity: 0.7;
+  transition: opacity 0.15s;
+}
+.apps-error-close:hover { opacity: 1; }
+
+/* Empty state */
+.apps-empty {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 64px 24px;
+  text-align: center;
+}
+.apps-empty-icon { margin-bottom: 16px; opacity: 0.6; }
+.apps-empty-title {
+  font-size: 17px;
+  font-weight: 700;
+  color: var(--color-text);
+  margin-bottom: 8px;
+}
+.apps-empty-sub {
+  font-size: 14px;
+  color: var(--color-muted);
+  max-width: 340px;
+}
+.apps-empty-link {
+  color: var(--color-primary);
+  font-weight: 600;
+  text-decoration: none;
+}
+.apps-empty-link:hover { text-decoration: underline; }
+
+/* Job type badge */
+.apps-type-chip {
+  display: inline-block;
+  padding: 2px 10px;
+  border-radius: 12px;
+  font-size: 12px;
+  font-weight: 600;
+}
+
+/* Location with pin icon */
+.apps-location {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  color: var(--color-muted);
+}
+
+/* Withdraw button */
+.apps-withdraw-btn {
+  background: none;
+  border: 1.5px solid var(--color-border);
+  color: var(--color-muted);
+  border-radius: 6px;
+  padding: 4px 12px;
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+  font-family: var(--font);
+  transition: border-color 0.15s, color 0.15s, background 0.15s;
+}
+.apps-withdraw-btn:hover:not(:disabled) {
+  border-color: var(--color-danger);
+  color: var(--color-danger);
+  background: var(--color-danger-light);
+}
+.apps-withdraw-btn--disabled,
+.apps-withdraw-btn:disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
+}
+
+/* Skeleton shimmer animation */
+@keyframes apps-shimmer {
+  0% { background-position: -400px 0; }
+  100% { background-position: 400px 0; }
+}
+.apps-skel {
+  border-radius: 6px;
+  background: linear-gradient(90deg, #e5e7eb 25%, #f3f4f6 50%, #e5e7eb 75%);
+  background-size: 800px 100%;
+  animation: apps-shimmer 1.4s infinite linear;
+}
+.apps-skel-row td { padding: 16px; }
+.apps-skel-title { height: 16px; width: 140px; }
+.apps-skel-sub { height: 14px; width: 100px; }
+.apps-skel-chip-sm { height: 20px; width: 68px; border-radius: 10px; }
+.apps-skel-date { height: 14px; width: 80px; }
+.apps-skel-btn { height: 28px; width: 72px; border-radius: 6px; }
+
 @media (max-width: 768px) {
   .applications-page { padding: 20px; overflow-x: hidden; }
   .apps-header { flex-direction: column; align-items: flex-start; gap: 8px; }

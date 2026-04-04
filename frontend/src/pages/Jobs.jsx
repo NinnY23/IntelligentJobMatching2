@@ -50,10 +50,10 @@ function JobTypeChip({ type }) {
 function MatchBadge({ score }) {
   if (score == null) return null;
   const pct = Math.round(score);
-  let bg = '#4F46E5';
-  if (pct >= 80) bg = '#4F46E5';
+  let bg = 'var(--color-primary)';
+  if (pct >= 80) bg = 'var(--color-primary)';
   else if (pct >= 50) bg = '#7C3AED';
-  else bg = '#9CA3AF';
+  else bg = 'var(--color-muted)';
   return (
     <span className="jobs-match-badge" style={{ background: bg }}>
       {pct}% match
@@ -379,6 +379,7 @@ export default function Jobs({ user: userProp }) {
 
   return (
     <div className="jobs-page">
+      <div className="jobs-layout">
       {/* Sidebar */}
       <aside className="jobs-sidebar">
         <h2 className="jobs-sidebar-title">Filters</h2>
@@ -487,6 +488,7 @@ export default function Jobs({ user: userProp }) {
           </div>
         )}
       </main>
+      </div>
 
       {selectedJob && (
         <JobModal

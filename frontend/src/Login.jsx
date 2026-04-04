@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import './components/AuthCard.css';
+import { loginUser } from './api';
 
 export default function Login({ onLoginSuccess, onSwitchToSignUp, onSwitchToForgotPassword }) {
   const [email, setEmail] = useState('');
@@ -12,18 +13,12 @@ export default function Login({ onLoginSuccess, onSwitchToSignUp, onSwitchToForg
     setError('');
     setLoading(true);
     try {
-      const res = await fetch('/api/login', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ email, password })
-      });
-      const data = await res.json();
-      if (!res.ok) { setError(data.message || 'Login failed'); return; }
+      const data = await loginUser(email, password);
       localStorage.setItem('token', data.token);
       localStorage.setItem('user', JSON.stringify(data.user));
       onLoginSuccess(data.user);
-    } catch {
-      setError('Network error. Please try again.');
+    } catch (err) {
+      setError(err.message || 'Login failed. Please try again.');
     } finally {
       setLoading(false);
     }

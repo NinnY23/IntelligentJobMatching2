@@ -45,7 +45,7 @@ function JobTypeChip({ type }) {
 
 function ConfirmDialog({ message, onConfirm, onCancel, loading }) {
   return (
-    <div className="apps-dialog-backdrop" role="dialog" aria-modal="true" aria-labelledby="apps-dialog-title">
+    <div className="apps-dialog-overlay" role="dialog" aria-modal="true" aria-labelledby="apps-dialog-title">
       <div className="apps-dialog">
         <div className="apps-dialog-icon">
           <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="#F59E0B" strokeWidth="2">
@@ -57,10 +57,10 @@ function ConfirmDialog({ message, onConfirm, onCancel, loading }) {
         <h3 id="apps-dialog-title" className="apps-dialog-title">Withdraw Application?</h3>
         <p className="apps-dialog-message">{message}</p>
         <div className="apps-dialog-actions">
-          <button className="apps-dialog-cancel" onClick={onCancel} disabled={loading}>
+          <button className="btn-outline" onClick={onCancel} disabled={loading}>
             Cancel
           </button>
-          <button className="apps-dialog-confirm" onClick={onConfirm} disabled={loading}>
+          <button className="btn-danger" onClick={onConfirm} disabled={loading}>
             {loading ? 'Withdrawing…' : 'Yes, Withdraw'}
           </button>
         </div>
@@ -153,13 +153,13 @@ export default function Applications() {
   }, {});
 
   return (
-    <div className="apps-page">
+    <div className="applications-page">
       {/* Page Header */}
       <div className="apps-header">
         <div>
-          <h1 className="apps-title">My Applications</h1>
+          <h2>My Applications</h2>
           {!loading && (
-            <p className="apps-subtitle">
+            <p className="apps-count">
               {applications.length} {applications.length === 1 ? 'application' : 'applications'}
             </p>
           )}
@@ -199,7 +199,7 @@ export default function Applications() {
             key={tab}
             role="tab"
             aria-selected={activeTab === tab}
-            className={`apps-tab${activeTab === tab ? ' apps-tab--active' : ''}`}
+            className={`apps-tab${activeTab === tab ? ' active' : ''}`}
             onClick={() => setActiveTab(tab)}
           >
             {tab}
@@ -213,7 +213,7 @@ export default function Applications() {
       {/* Table / Content Area */}
       <div className="apps-table-wrap">
         {loading ? (
-          <table className="apps-table">
+          <table className="applications-table">
             <thead>
               <tr>
                 <th>Position</th>
@@ -259,7 +259,7 @@ export default function Applications() {
             )}
           </div>
         ) : (
-          <table className="apps-table">
+          <table className="applications-table">
             <thead>
               <tr>
                 <th>Position</th>
@@ -276,12 +276,12 @@ export default function Applications() {
                 const job = app.job || {};
                 const canWithdraw = app.status !== 'shortlisted' && app.status !== 'withdrawn';
                 return (
-                  <tr key={app.id} className="apps-row">
-                    <td className="apps-td-position">
-                      <span className="apps-position-name">{job.position || '—'}</span>
+                  <tr key={app.id}>
+                    <td>
+                      {job.position || '—'}
                     </td>
-                    <td className="apps-td-company">{job.company || '—'}</td>
-                    <td className="apps-td-location">
+                    <td>{job.company || '—'}</td>
+                    <td>
                       {job.location ? (
                         <span className="apps-location">
                           <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
@@ -292,14 +292,14 @@ export default function Applications() {
                         </span>
                       ) : '—'}
                     </td>
-                    <td className="apps-td-type">
+                    <td>
                       <JobTypeChip type={job.job_type} />
                     </td>
-                    <td className="apps-td-date">{formatDate(app.created_at)}</td>
-                    <td className="apps-td-status">
+                    <td>{formatDate(app.created_at)}</td>
+                    <td>
                       <StatusChip status={app.status} />
                     </td>
-                    <td className="apps-td-action">
+                    <td>
                       <button
                         className={`apps-withdraw-btn${!canWithdraw ? ' apps-withdraw-btn--disabled' : ''}`}
                         onClick={() => canWithdraw && handleWithdrawClick(app)}

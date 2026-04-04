@@ -15,7 +15,7 @@ import sys
 import os
 import bcrypt
 from app import app, db
-from models import User, Job
+from models import User, Job, Application
 from datetime import datetime
 
 def init_database():
@@ -57,7 +57,8 @@ def seed_database():
                 phone='+1-234-567-8900',
                 location='San Francisco, CA',
                 bio='Full-stack developer with 5 years of experience',
-                skills='Python, JavaScript, React, AWS, Docker'
+                skills='Python, JavaScript, React, AWS, Docker',
+                role='employee'
             )
 
             user2 = User(
@@ -67,7 +68,8 @@ def seed_database():
                 phone='+1-345-678-9012',
                 location='New York, NY',
                 bio='Data scientist and ML engineer',
-                skills='Python, Machine Learning, TensorFlow, SQL, Pandas'
+                skills='Python, Machine Learning, TensorFlow, SQL, Pandas',
+                role='employee'
             )
 
             user3 = User(
@@ -77,7 +79,8 @@ def seed_database():
                 phone='+1-456-789-0123',
                 location='Austin, TX',
                 bio='Hiring for tech positions',
-                skills='Recruitment, HR, Tech'
+                skills='Recruitment, HR, Tech',
+                role='employer'
             )
             
             db.session.add_all([user1, user2, user3])
@@ -141,7 +144,28 @@ def seed_database():
             print(f"  - {job1.position} at {job1.company}")
             print(f"  - {job2.position} at {job2.company}")
             print(f"  - {job3.position} at {job3.company}")
-            
+
+            # Create sample applications so employer can see applicants
+            app1 = Application(job_id=job1.id, user_id=user1.id, status='pending')
+            app2 = Application(job_id=job2.id, user_id=user1.id, status='pending')
+            app3 = Application(job_id=job1.id, user_id=user2.id, status='shortlisted')
+            app4 = Application(job_id=job3.id, user_id=user2.id, status='pending')
+
+            db.session.add_all([app1, app2, app3, app4])
+
+            # Update applicant counts on jobs
+            job1.applicants = 2
+            job2.applicants = 1
+            job3.applicants = 1
+
+            db.session.commit()
+
+            print("\n✓ Sample applications created:")
+            print(f"  - John Doe applied to {job1.position} (pending)")
+            print(f"  - John Doe applied to {job2.position} (pending)")
+            print(f"  - Jane Smith applied to {job1.position} (shortlisted)")
+            print(f"  - Jane Smith applied to {job3.position} (pending)")
+
             print("\n✓ Database seeded successfully!")
             return True
             

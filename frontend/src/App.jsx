@@ -15,7 +15,7 @@ import Dashboard from './pages/Dashboard';
 import Messages from './pages/Messages';
 import Navbar from './components/Navbar';
 import ErrorBoundary from './components/ErrorBoundary';
-import { fetchUnreadCount, logoutUser } from './api';
+import { fetchUnreadCount, logoutUser, getProfile } from './api';
 
 function DashboardWrapper({ user }) {
   const navigate = useNavigate();
@@ -39,21 +39,41 @@ function AppContent() {
   const navigate = useNavigate();
 
   useEffect(() => {
-    // Check if user is already logged in
-    const token = localStorage.getItem('token');
-    const savedUser = localStorage.getItem('user');
-    
-    if (token && savedUser) {
+    async function initUser() {
+      const token = localStorage.getItem('token');
+      const savedUser = localStorage.getItem('user');
+
+      if (!token) {
+        setLoading(false);
+        return;
+      }
+
+      // Show cached user immediately for fast UI
+      if (savedUser) {
+        try {
+          setUser(JSON.parse(savedUser));
+        } catch {
+          // ignore parse errors — server fetch below will correct
+        }
+      }
+
+      // Validate against server — source of truth
       try {
-        setUser(JSON.parse(savedUser));
-      } catch (err) {
-        console.error('Error parsing saved user:', err);
+        const data = await getProfile();
+        const freshUser = data.user;
+        localStorage.setItem('user', JSON.stringify(freshUser));
+        setUser(freshUser);
+      } catch {
+        // Token invalid or expired — clear session
         localStorage.removeItem('token');
         localStorage.removeItem('user');
+        setUser(null);
       }
+
+      setLoading(false);
     }
-    
-    setLoading(false);
+
+    initUser();
   }, []);
 
   useEffect(() => {

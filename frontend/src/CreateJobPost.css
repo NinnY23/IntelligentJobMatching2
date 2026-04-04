@@ -50,6 +50,24 @@
 .skill-remove:hover { color: var(--color-danger); }
 
 .form-actions { display: flex; gap: 12px; justify-content: flex-end; margin-top: 24px; }
+.btn-secondary {
+  background: var(--color-bg);
+  color: var(--color-text);
+  border: 1.5px solid var(--color-border);
+  border-radius: var(--radius);
+  padding: 10px 20px;
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+  font-family: var(--font);
+  transition: all 0.15s;
+}
+.btn-secondary:hover {
+  border-color: var(--color-primary);
+  color: var(--color-primary);
+  background: var(--color-primary-light);
+}
+.btn-secondary:disabled { opacity: 0.6; cursor: not-allowed; }
 .form-success { color: var(--color-success); font-size: 13px; font-weight: 600; padding: 8px 12px; background: #f0fdf4; border-radius: 8px; }
 .form-error-msg { color: var(--color-danger); font-size: 13px; }
 

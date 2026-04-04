@@ -122,6 +122,65 @@
 
 .form-actions { display: flex; gap: 12px; justify-content: flex-end; margin-top: 24px; }
 
+/* Resume upload dropzone */
+.resume-dropzone {
+  border: 2px dashed var(--color-border);
+  border-radius: 12px;
+  padding: 24px;
+  text-align: center;
+  cursor: pointer;
+  transition: all 0.2s;
+  background: var(--color-bg);
+  margin-bottom: 12px;
+}
+.resume-dropzone:hover {
+  border-color: var(--color-primary);
+  background: var(--color-primary-light);
+}
+.resume-dropzone.drag-active {
+  border-color: var(--color-primary);
+  background: var(--color-primary-light);
+  box-shadow: 0 0 0 3px rgba(79, 70, 229, 0.1);
+}
+.resume-dropzone-icon {
+  color: var(--color-muted);
+  margin-bottom: 8px;
+}
+.resume-dropzone:hover .resume-dropzone-icon,
+.resume-dropzone.drag-active .resume-dropzone-icon {
+  color: var(--color-primary);
+}
+.resume-dropzone-text {
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--color-text);
+  margin: 0 0 4px;
+}
+.resume-dropzone-hint {
+  font-size: 12px;
+  color: var(--color-muted);
+}
+
+/* Divider between upload and text paste */
+.resume-divider {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin: 16px 0;
+  color: var(--color-muted);
+  font-size: 12px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+.resume-divider::before,
+.resume-divider::after {
+  content: '';
+  flex: 1;
+  height: 1px;
+  background: var(--color-border);
+}
+
 @media (max-width: 768px) {
   .profile-page { padding: 0 12px; margin: 16px auto; }
   .profile-form-card { padding: 20px; }

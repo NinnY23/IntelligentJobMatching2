@@ -47,7 +47,7 @@ export default function Navbar({ user, onLogout, unreadMessages = 0 }) {
           <button
             key={link.path}
             className={`nav-link${isActive(link.path) ? ' active' : ''}`}
-            onClick={() => navigate(link.path)}
+            onClick={() => { navigate(link.path); setMenuOpen(false); }}
             aria-current={isActive(link.path) ? 'page' : undefined}
           >
             {link.label}
@@ -58,6 +58,12 @@ export default function Navbar({ user, onLogout, unreadMessages = 0 }) {
             )}
           </button>
         ))}
+        <button
+          className="nav-link nav-logout-mobile"
+          onClick={() => { setMenuOpen(false); onLogout(); }}
+        >
+          Logout
+        </button>
       </div>
       <div className="navbar-user">
         <div className="avatar" aria-hidden="true">{initials}</div>

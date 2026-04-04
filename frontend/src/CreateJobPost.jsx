@@ -252,9 +252,7 @@ export default function CreateJobPost({ onPostCreated, onBack }) {
               <button type="submit" disabled={loading} className="btn-primary">
                 {loading ? 'Posting...' : 'Post Job'}
               </button>
-              <button type="button" onClick={handleSaveDraft} disabled={loading}
-                style={{ background: '#f3f4f6', color: '#374151', border: '1px solid #d1d5db',
-                         padding: '10px 20px', borderRadius: '8px', cursor: 'pointer' }}>
+              <button type="button" onClick={handleSaveDraft} disabled={loading} className="btn-secondary">
                 {loading ? 'Saving...' : 'Save as Draft'}
               </button>
             </div>

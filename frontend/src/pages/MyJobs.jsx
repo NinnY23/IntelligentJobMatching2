@@ -79,14 +79,6 @@ export default function MyJobs({ user, navigate }) {
 
   const filteredJobs = filter === 'all' ? jobs : jobs.filter(j => j.status === filter);
 
-  const statusBadgeStyle = (status) => {
-    const base = { padding: '2px 8px', borderRadius: '12px', fontSize: '0.75rem', fontWeight: 600 };
-    if (status === 'active') return { ...base, background: '#d1fae5', color: '#065f46' };
-    if (status === 'draft') return { ...base, background: '#fef3c7', color: '#92400e' };
-    if (status === 'archived') return { ...base, background: '#f3f4f6', color: '#6b7280' };
-    return base;
-  };
-
   if (loading) return <div className="loading">Loading your job postings...</div>;
 
   return (
@@ -104,17 +96,12 @@ export default function MyJobs({ user, navigate }) {
         </div>
       )}
 
-      <div style={{ display: 'flex', gap: '8px', marginBottom: '16px' }}>
+      <div className="myjobs-tabs">
         {['all', 'active', 'draft', 'archived'].map(tab => (
           <button
             key={tab}
+            className={`myjobs-tab${filter === tab ? ' active' : ''}`}
             onClick={() => setFilter(tab)}
-            style={{
-              padding: '6px 16px', borderRadius: '20px', border: '1px solid #d1d5db',
-              background: filter === tab ? '#2563eb' : '#fff',
-              color: filter === tab ? '#fff' : '#374151',
-              cursor: 'pointer', fontWeight: 500, textTransform: 'capitalize'
-            }}
           >
             {tab === 'all' ? 'All' : tab.charAt(0).toUpperCase() + tab.slice(1) + 's'}
           </button>
@@ -149,7 +136,7 @@ export default function MyJobs({ user, navigate }) {
                 <td>{job.position}</td>
                 <td>{job.company}</td>
                 <td>{job.location}</td>
-                <td><span style={statusBadgeStyle(job.status)}>{job.status}</span></td>
+                <td><span className={`myjobs-status myjobs-status--${job.status}`}>{job.status}</span></td>
                 <td>{job.applicants || 0}</td>
                 <td>{job.deadline}</td>
                 <td className="action-cell">

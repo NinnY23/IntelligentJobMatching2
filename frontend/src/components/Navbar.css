@@ -49,7 +49,7 @@
   position: absolute;
   top: 2px;
   right: 4px;
-  background: #ef4444;
+  background: var(--color-danger);
   color: #fff;
   font-size: 9px;
   font-weight: 700;
@@ -157,5 +157,24 @@
 
   .navbar-user {
     display: none;
+  }
+}
+
+/* Mobile-only logout in hamburger menu */
+.nav-logout-mobile {
+  display: none;
+}
+
+@media (max-width: 768px) {
+  .nav-logout-mobile {
+    display: block;
+    color: var(--color-danger);
+    font-weight: 600;
+    margin-top: 8px;
+    padding-top: 12px;
+    border-top: 1px solid var(--color-border);
+  }
+  .nav-logout-mobile:hover {
+    background: var(--color-danger-light);
   }
 }

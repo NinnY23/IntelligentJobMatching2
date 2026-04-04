@@ -19,7 +19,8 @@ export async function loginUser(email, password) {
   });
 
   if (!res.ok) {
-    throw new Error('Login failed');
+    const data = await res.json().catch(() => ({}));
+    throw new Error(data.message || 'Login failed');
   }
 
   return res.json();
@@ -201,6 +202,25 @@ export async function parseResumeText(resumeText) {
   if (!res.ok) {
     const data = await res.json();
     throw new Error(data.message || 'Failed to parse resume');
+  }
+  return res.json();
+}
+
+export async function uploadResumePdf(file) {
+  const token = localStorage.getItem('token');
+  const formData = new FormData();
+  formData.append('resume', file);
+  const res = await fetch('/api/upload-resume', {
+    method: 'POST',
+    headers: {
+      'Authorization': `Bearer ${token}`,
+    },
+    body: formData,
+  });
+  handleAuthError(res);
+  if (!res.ok) {
+    const data = await res.json().catch(() => ({}));
+    throw new Error(data.message || 'Failed to upload resume');
   }
   return res.json();
 }

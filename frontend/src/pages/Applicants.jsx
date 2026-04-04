@@ -4,33 +4,28 @@ import { useNavigate } from 'react-router-dom';
 import { fetchJobApplicants, updateApplicationStatus } from '../api';
 import './Applicants.css';
 
-const SCORE_COLOR = score => {
-  if (score >= 80) return '#16a34a';
-  if (score >= 50) return '#4F46E5';
-  return '#9ca3af';
+const scoreClass = score => {
+  if (score >= 80) return 'score-badge--high';
+  if (score >= 50) return 'score-badge--mid';
+  return 'score-badge--low';
 };
 
 function MatchBar({ score }) {
   const pct = Math.round(score);
-  let color = '#4F46E5';
-  if (pct >= 80) color = '#16a34a';
+  let color = 'var(--color-primary)';
+  if (pct >= 80) color = 'var(--color-success)';
   else if (pct >= 50) color = '#f59e0b';
-  else color = '#9CA3AF';
+  else color = 'var(--color-muted)';
   return (
-    <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginTop: '8px' }}>
-      <div style={{ flex: 1, height: '8px', background: '#e5e7eb', borderRadius: '4px', overflow: 'hidden' }}>
-        <div style={{ height: '100%', width: `${pct}%`, background: color, borderRadius: '4px' }} />
+    <div className="applicants-match-bar-container">
+      <div className="applicants-match-bar">
+        <div className="applicants-match-bar-fill" style={{ width: `${pct}%`, background: color }} />
       </div>
-      <span style={{ fontSize: '13px', fontWeight: 600 }}>{pct}%</span>
+      <span className="applicants-match-bar-label">{pct}%</span>
     </div>
   );
 }
 
-const STATUS_COLORS = {
-  pending: '#4F46E5',
-  shortlisted: '#16a34a',
-  withdrawn: '#9ca3af',
-};
 
 export default function Applicants({ jobId }) {
   const [applicants, setApplicants] = useState([]);
@@ -131,10 +126,7 @@ export default function Applicants({ jobId }) {
                   <span className="muted">{a.email}</span>
                 </td>
                 <td>
-                  <span
-                    className="score-badge"
-                    style={{ background: SCORE_COLOR(a.match_score) }}
-                  >
+                  <span className={`score-badge ${scoreClass(a.match_score)}`}>
                     {a.match_score}%
                   </span>
                 </td>
@@ -158,18 +150,7 @@ export default function Applicants({ jobId }) {
                 </td>
                 <td>{new Date(a.applied_at).toLocaleDateString()}</td>
                 <td>
-                  <span
-                    className="status-chip"
-                    style={{
-                      background: STATUS_COLORS[a.status] || '#6b7280',
-                      color: '#fff',
-                      padding: '2px 10px',
-                      borderRadius: '12px',
-                      fontSize: '0.85em',
-                    }}
-                  >
-                    {a.status}
-                  </span>
+                  <span className={`status-chip status-${a.status}`}>{a.status}</span>
                 </td>
                 <td>
                   {a.status !== 'shortlisted' && (
@@ -242,12 +223,7 @@ export default function Applicants({ jobId }) {
                 <p className="applicant-profile-email">{profileTarget.email}</p>
                 <div className="applicant-profile-meta">
                   <span className="profile-role-badge">job seeker</span>
-                  <span
-                    className="status-chip"
-                    style={{ background: STATUS_COLORS[profileTarget.status] || '#6b7280', color: '#fff' }}
-                  >
-                    {profileTarget.status}
-                  </span>
+                  <span className={`status-chip status-${profileTarget.status}`}>{profileTarget.status}</span>
                   <span className="muted">
                     Applied {new Date(profileTarget.applied_at).toLocaleDateString()}
                   </span>
@@ -258,10 +234,7 @@ export default function Applicants({ jobId }) {
             {/* Match score */}
             <div className="applicant-profile-section">
               <h4>Match Score</h4>
-              <span
-                className="score-badge"
-                style={{ background: SCORE_COLOR(profileTarget.match_score) }}
-              >
+              <span className={`score-badge ${scoreClass(profileTarget.match_score)}`}>
                 {profileTarget.match_score}% match
               </span>
               {profileTarget.match_score != null && <MatchBar score={profileTarget.match_score} />}

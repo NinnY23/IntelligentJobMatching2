@@ -3,12 +3,6 @@ import React, { useState, useEffect } from 'react';
 import { fetchEmployerDashboard } from '../api';
 import './Dashboard.css';
 
-const STATUS_CHIP_COLORS = {
-  pending: '#4F46E5',
-  shortlisted: '#16a34a',
-  withdrawn: '#9ca3af',
-};
-
 export default function Dashboard({ navigate }) {
   const [stats, setStats] = useState(null);
   const [loading, setLoading] = useState(true);
@@ -78,16 +72,7 @@ export default function Dashboard({ navigate }) {
                     {' — '}{new Date(a.applied_at).toLocaleDateString()}
                   </span>
                 </div>
-                <span
-                  className={`status-chip status-${a.status}`}
-                  style={{
-                    background: STATUS_CHIP_COLORS[a.status] || '#6b7280',
-                    color: '#fff',
-                    padding: '2px 10px',
-                    borderRadius: '12px',
-                    fontSize: '0.82em',
-                  }}
-                >
+                <span className={`status-chip status-${a.status}`}>
                   {a.status}
                 </span>
               </li>

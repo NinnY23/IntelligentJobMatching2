@@ -64,7 +64,9 @@ def test_withdraw_application(client, seeker_token, sample_job):
     )
     assert del_res.status_code == 200
     list_res = client.get('/api/applications', headers={'Authorization': f'Bearer {seeker_token}'})
-    assert len(list_res.get_json()) == 0
+    apps = list_res.get_json()
+    assert len(apps) == 1
+    assert apps[0]['status'] == 'withdrawn'
 
 
 def test_employer_cannot_apply(client, employer_token, sample_job):
