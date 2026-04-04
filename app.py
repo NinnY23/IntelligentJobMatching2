@@ -12,7 +12,7 @@ import fitz  # PyMuPDF
 import re
 import spacy
 import bcrypt
-from models import db, User, Job
+from models import db, User, Job, Application
 import os
 from prolog_engine import rank_candidates, rank_jobs as prolog_rank_jobs
 
@@ -714,6 +714,112 @@ def get_employer_jobs(user):
         }), 200
     except Exception as e:
         return jsonify({"message": str(e)}), 500
+
+# ── Job Application Endpoints ──────────────────────────────────────────────
+
+@app.route('/api/jobs/<int:job_id>/apply', methods=['POST'])
+def apply_for_job(job_id):
+    """Job seeker submits an application for a job."""
+    auth_header = request.headers.get('Authorization')
+    if not auth_header or not auth_header.startswith('Bearer '):
+        return jsonify({"message": "Unauthorized"}), 401
+    token = auth_header.split(' ')[1]
+    parts = token.split('_')
+    email = '_'.join(parts[1:-1]) if len(parts) >= 3 else (parts[1] if len(parts) >= 2 else None)
+    user = User.query.filter_by(email=email).first() if email else None
+    if not user:
+        return jsonify({"message": "Unauthorized"}), 401
+    if user.role != 'employee':
+        return jsonify({"message": "Only job seekers can apply"}), 403
+
+    job = Job.query.get(job_id)
+    if not job:
+        return jsonify({"message": "Job not found"}), 404
+
+    existing = Application.query.filter_by(job_id=job_id, user_id=user.id).first()
+    if existing:
+        return jsonify({"message": "Already applied to this job"}), 409
+
+    app_obj = Application(job_id=job_id, user_id=user.id, status='pending')
+    db.session.add(app_obj)
+    job.applicants = (job.applicants or 0) + 1
+    db.session.commit()
+    return jsonify({"message": "Application submitted", "application": app_obj.to_dict()}), 201
+
+
+@app.route('/api/applications', methods=['GET'])
+def get_my_applications():
+    """Return all applications belonging to the logged-in job seeker, with job details."""
+    auth_header = request.headers.get('Authorization')
+    if not auth_header or not auth_header.startswith('Bearer '):
+        return jsonify({"message": "Unauthorized"}), 401
+    token = auth_header.split(' ')[1]
+    parts = token.split('_')
+    email = '_'.join(parts[1:-1]) if len(parts) >= 3 else (parts[1] if len(parts) >= 2 else None)
+    user = User.query.filter_by(email=email).first() if email else None
+    if not user:
+        return jsonify({"message": "Unauthorized"}), 401
+
+    apps = Application.query.filter_by(user_id=user.id).all()
+    result = []
+    for a in apps:
+        d = a.to_dict()
+        job = Job.query.get(a.job_id)
+        if job:
+            d['job'] = job.to_dict()
+        result.append(d)
+    return jsonify(result), 200
+
+
+@app.route('/api/applications/<int:app_id>', methods=['DELETE'])
+def withdraw_application(app_id):
+    """Job seeker withdraws an application (not allowed when shortlisted)."""
+    auth_header = request.headers.get('Authorization')
+    if not auth_header or not auth_header.startswith('Bearer '):
+        return jsonify({"message": "Unauthorized"}), 401
+    token = auth_header.split(' ')[1]
+    parts = token.split('_')
+    email = '_'.join(parts[1:-1]) if len(parts) >= 3 else (parts[1] if len(parts) >= 2 else None)
+    user = User.query.filter_by(email=email).first() if email else None
+    if not user:
+        return jsonify({"message": "Unauthorized"}), 401
+
+    application = Application.query.filter_by(id=app_id, user_id=user.id).first()
+    if not application:
+        return jsonify({"message": "Application not found"}), 404
+    if application.status == 'shortlisted':
+        return jsonify({"message": "Cannot withdraw a shortlisted application"}), 400
+
+    job = Job.query.get(application.job_id)
+    if job and (job.applicants or 0) > 0:
+        job.applicants -= 1
+    db.session.delete(application)
+    db.session.commit()
+    return jsonify({"message": "Application withdrawn"}), 200
+
+
+@app.route('/api/applications/<int:app_id>/status', methods=['PATCH'])
+@require_role('employer')
+def update_application_status(employer, app_id):
+    """Employer updates application status (shortlist/reject)."""
+    data = request.get_json()
+    status = data.get('status') if data else None
+    if status not in ('pending', 'shortlisted', 'withdrawn'):
+        return jsonify({"message": "Invalid status"}), 400
+
+    application = Application.query.get(app_id)
+    if not application:
+        return jsonify({"message": "Application not found"}), 404
+
+    # Verify the application belongs to one of the employer's jobs
+    job = Job.query.filter_by(id=application.job_id, employer_id=employer.id).first()
+    if not job:
+        return jsonify({"message": "Forbidden"}), 403
+
+    application.status = status
+    db.session.commit()
+    return jsonify({"message": "Status updated", "application": application.to_dict()}), 200
+
 
 if __name__ == "__main__":
     with app.app_context():
