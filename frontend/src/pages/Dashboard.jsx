@@ -1,6 +1,12 @@
 // frontend/src/pages/Dashboard.jsx
 import React, { useState, useEffect } from 'react';
 
+const STATUS_CHIP_COLORS = {
+  pending: '#4F46E5',
+  shortlisted: '#16a34a',
+  withdrawn: '#9ca3af',
+};
+
 export default function Dashboard({ navigate }) {
   const [stats, setStats] = useState(null);
   const [loading, setLoading] = useState(true);
@@ -28,12 +34,6 @@ export default function Dashboard({ navigate }) {
 
   if (loading) return <div className="loading">Loading dashboard...</div>;
   if (error) return <div className="error-banner">{error}</div>;
-
-  const STATUS_CHIP_COLORS = {
-    pending: '#4F46E5',
-    shortlisted: '#16a34a',
-    withdrawn: '#9ca3af',
-  };
 
   return (
     <div className="dashboard-page">
@@ -73,8 +73,8 @@ export default function Dashboard({ navigate }) {
         <div className="recent-activity">
           <h3>Recent Applications</h3>
           <ul className="activity-list">
-            {stats.recent_applications.map((a, i) => (
-              <li key={i} className="activity-item">
+            {stats.recent_applications.map((a) => (
+              <li key={`${a.applicant_name}-${a.job_position}-${a.applied_at}`} className="activity-item">
                 <div className="activity-info">
                   <strong>{a.applicant_name}</strong>
                   {' applied for '}

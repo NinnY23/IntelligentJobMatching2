@@ -31,37 +31,46 @@ export default function MyJobs({ user, navigate }) {
 
   async function handleDelete(jobId) {
     const token = localStorage.getItem('token');
-    const res = await fetch(`/api/job-posts/${jobId}`, {
-      method: 'DELETE',
-      headers: { 'Authorization': `Bearer ${token}` },
-    });
-    if (res.ok) {
-      setMessage('Job posting deleted.');
+    try {
+      const res = await fetch(`/api/job-posts/${jobId}`, {
+        method: 'DELETE',
+        headers: { 'Authorization': `Bearer ${token}` },
+      });
+      if (res.ok) {
+        setMessage('Job posting deleted.');
+        setDeleteConfirm(null);
+        loadMyJobs();
+      } else {
+        const data = await res.json();
+        setMessage(data.message || 'Failed to delete job.');
+      }
+    } catch {
+      setMessage('Network error. Could not delete job.');
       setDeleteConfirm(null);
-      loadMyJobs();
-    } else {
-      const data = await res.json();
-      setMessage(data.message || 'Failed to delete job.');
     }
   }
 
   async function handleUpdate(jobId, formData) {
     const token = localStorage.getItem('token');
-    const res = await fetch(`/api/job-posts/${jobId}`, {
-      method: 'PUT',
-      headers: {
-        'Content-Type': 'application/json',
-        'Authorization': `Bearer ${token}`,
-      },
-      body: JSON.stringify(formData),
-    });
-    if (res.ok) {
-      setMessage('Job posting updated.');
-      setEditJob(null);
-      loadMyJobs();
-    } else {
-      const data = await res.json();
-      setMessage(data.message || 'Failed to update job.');
+    try {
+      const res = await fetch(`/api/job-posts/${jobId}`, {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`,
+        },
+        body: JSON.stringify(formData),
+      });
+      if (res.ok) {
+        setMessage('Job posting updated.');
+        setEditJob(null);
+        loadMyJobs();
+      } else {
+        const data = await res.json();
+        setMessage(data.message || 'Failed to update job.');
+      }
+    } catch {
+      setMessage('Network error. Could not update job.');
     }
   }
 
@@ -137,8 +146,8 @@ export default function MyJobs({ user, navigate }) {
 
       {deleteConfirm && (
         <div className="modal-overlay">
-          <div className="modal confirm-modal">
-            <h3>Delete Job Posting?</h3>
+          <div className="modal confirm-modal" role="dialog" aria-modal="true" aria-labelledby="delete-confirm-title">
+            <h3 id="delete-confirm-title">Delete Job Posting?</h3>
             <p>
               This will permanently remove the job and all associated applications.
               This action cannot be undone.
@@ -197,9 +206,9 @@ function EditJobModal({ job, onSave, onClose }) {
 
   return (
     <div className="modal-overlay">
-      <div className="modal edit-modal">
+      <div className="modal edit-modal" role="dialog" aria-modal="true" aria-labelledby="edit-modal-title">
         <button className="modal-close" onClick={onClose} aria-label="Close">✕</button>
-        <h3>Edit Job Posting</h3>
+        <h3 id="edit-modal-title">Edit Job Posting</h3>
         <div className="form-grid">
           {Object.entries(form).map(([key, val]) => {
             const label = key.replace(/_/g, ' ');

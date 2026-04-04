@@ -43,20 +43,24 @@ export default function Applicants({ jobId }) {
 
   async function handleStatusChange(appId, newStatus) {
     const token = localStorage.getItem('token');
-    const res = await fetch(`/api/applications/${appId}/status`, {
-      method: 'PATCH',
-      headers: {
-        'Content-Type': 'application/json',
-        'Authorization': `Bearer ${token}`,
-      },
-      body: JSON.stringify({ status: newStatus }),
-    });
-    if (res.ok) {
-      setMessage(`Candidate marked as ${newStatus}.`);
-      loadApplicants();
-    } else {
-      const data = await res.json();
-      setMessage(data.message || 'Failed to update status.');
+    try {
+      const res = await fetch(`/api/applications/${appId}/status`, {
+        method: 'PATCH',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`,
+        },
+        body: JSON.stringify({ status: newStatus }),
+      });
+      if (res.ok) {
+        setMessage(`Candidate marked as ${newStatus}.`);
+        loadApplicants();
+      } else {
+        const data = await res.json();
+        setMessage(data.message || 'Failed to update status.');
+      }
+    } catch {
+      setMessage('Network error. Could not update status.');
     }
   }
 
@@ -77,12 +81,10 @@ export default function Applicants({ jobId }) {
         </div>
       )}
 
-      <div className="filter-bar" role="tablist">
+      <div className="filter-bar">
         {['all', 'pending', 'shortlisted'].map(f => (
           <button
             key={f}
-            role="tab"
-            aria-selected={filter === f}
             className={`filter-btn${filter === f ? ' active' : ''}`}
             onClick={() => setFilter(f)}
           >
