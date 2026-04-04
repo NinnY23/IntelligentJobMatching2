@@ -1,0 +1,517 @@
+/* src/pages/Applications.css */
+@import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700&display=swap');
+
+/* ── Page layout ────────────────────────────────────────────── */
+.apps-page {
+  min-height: calc(100vh - 70px);
+  background: #F8F9FB;
+  font-family: 'Plus Jakarta Sans', 'Segoe UI', sans-serif;
+  padding: 36px 48px;
+  box-sizing: border-box;
+}
+
+/* ── Header ──────────────────────────────────────────────────── */
+.apps-header {
+  margin-bottom: 28px;
+}
+
+.apps-title {
+  font-size: 26px;
+  font-weight: 700;
+  color: #111827;
+  margin: 0 0 4px 0;
+}
+
+.apps-subtitle {
+  font-size: 14px;
+  color: #6B7280;
+  margin: 0;
+}
+
+/* ── Error / warning banners ──────────────────────────────────── */
+.apps-error {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  background: #FEF2F2;
+  border: 1px solid #FECACA;
+  color: #991B1B;
+  padding: 12px 16px;
+  border-radius: 10px;
+  font-size: 14px;
+  margin-bottom: 20px;
+  flex-wrap: wrap;
+}
+
+.apps-error--warn {
+  background: #FFFBEB;
+  border-color: #FDE68A;
+  color: #92400E;
+}
+
+.apps-error-retry,
+.apps-error-close {
+  background: none;
+  border: none;
+  font-family: inherit;
+  font-size: 13px;
+  font-weight: 600;
+  color: inherit;
+  cursor: pointer;
+  text-decoration: underline;
+  padding: 0;
+  margin-left: auto;
+  opacity: 0.8;
+  transition: opacity 0.2s;
+}
+
+.apps-error-retry:hover,
+.apps-error-close:hover {
+  opacity: 1;
+}
+
+.apps-error-close {
+  text-decoration: none;
+  font-size: 18px;
+  font-weight: 700;
+  line-height: 1;
+}
+
+/* ── Status filter tabs ───────────────────────────────────────── */
+.apps-tabs {
+  display: flex;
+  gap: 6px;
+  margin-bottom: 24px;
+  flex-wrap: wrap;
+}
+
+.apps-tab {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 8px 16px;
+  border: 1.5px solid #E5E7EB;
+  border-radius: 8px;
+  background: #fff;
+  font-size: 13px;
+  font-weight: 600;
+  font-family: inherit;
+  color: #6B7280;
+  cursor: pointer;
+  transition: border-color 0.2s, color 0.2s, background 0.2s, box-shadow 0.2s;
+}
+
+.apps-tab:hover {
+  border-color: #A5B4FC;
+  color: #4F46E5;
+}
+
+.apps-tab--active {
+  background: #EEF2FF;
+  border-color: #4F46E5;
+  color: #4F46E5;
+  box-shadow: 0 0 0 3px rgba(79, 70, 229, 0.08);
+}
+
+.apps-tab-count {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 20px;
+  height: 20px;
+  padding: 0 5px;
+  background: #C7D2FE;
+  color: #3730A3;
+  border-radius: 20px;
+  font-size: 11px;
+  font-weight: 700;
+  line-height: 1;
+}
+
+.apps-tab--active .apps-tab-count {
+  background: #4F46E5;
+  color: #fff;
+}
+
+/* ── Table wrapper ────────────────────────────────────────────── */
+.apps-table-wrap {
+  background: #fff;
+  border-radius: 16px;
+  border: 1.5px solid #E5E7EB;
+  overflow: hidden;
+  box-shadow: 0 1px 6px rgba(0, 0, 0, 0.04);
+}
+
+/* ── Table ────────────────────────────────────────────────────── */
+.apps-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 14px;
+}
+
+.apps-table thead tr {
+  background: #F9FAFB;
+  border-bottom: 1.5px solid #E5E7EB;
+}
+
+.apps-table th {
+  text-align: left;
+  padding: 13px 16px;
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.07em;
+  text-transform: uppercase;
+  color: #9CA3AF;
+  white-space: nowrap;
+}
+
+.apps-row {
+  border-bottom: 1px solid #F3F4F6;
+  transition: background 0.18s;
+}
+
+.apps-row:last-child {
+  border-bottom: none;
+}
+
+.apps-row:hover {
+  background: #FAFBFF;
+}
+
+.apps-table td {
+  padding: 14px 16px;
+  vertical-align: middle;
+  color: #374151;
+}
+
+/* ── Cell-specific styles ─────────────────────────────────────── */
+.apps-td-position {
+  min-width: 160px;
+}
+
+.apps-position-name {
+  font-weight: 600;
+  color: #111827;
+}
+
+.apps-td-company {
+  color: #6B7280;
+  font-weight: 500;
+  min-width: 120px;
+}
+
+.apps-td-location {
+  min-width: 120px;
+}
+
+.apps-location {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  color: #6B7280;
+  font-size: 13px;
+}
+
+.apps-td-type {
+  min-width: 90px;
+}
+
+.apps-td-date {
+  white-space: nowrap;
+  color: #6B7280;
+  font-size: 13px;
+  min-width: 110px;
+}
+
+.apps-td-status {
+  min-width: 110px;
+}
+
+.apps-td-action {
+  min-width: 100px;
+  text-align: right;
+}
+
+/* ── Status chips ─────────────────────────────────────────────── */
+.apps-chip {
+  display: inline-flex;
+  align-items: center;
+  padding: 4px 10px;
+  border-radius: 20px;
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.03em;
+  white-space: nowrap;
+}
+
+.apps-chip--pending {
+  background: #FFFBEB;
+  color: #92400E;
+  border: 1px solid #FDE68A;
+}
+
+.apps-chip--shortlisted {
+  background: #F0FDF4;
+  color: #15803D;
+  border: 1px solid #BBF7D0;
+}
+
+.apps-chip--withdrawn {
+  background: #F3F4F6;
+  color: #6B7280;
+  border: 1px solid #E5E7EB;
+}
+
+/* ── Job type chip ────────────────────────────────────────────── */
+.apps-type-chip {
+  display: inline-block;
+  font-size: 11px;
+  font-weight: 600;
+  padding: 3px 9px;
+  border-radius: 20px;
+  white-space: nowrap;
+}
+
+/* ── Withdraw button ──────────────────────────────────────────── */
+.apps-withdraw-btn {
+  padding: 7px 14px;
+  background: none;
+  border: 1.5px solid #E5E7EB;
+  border-radius: 8px;
+  font-size: 12px;
+  font-weight: 600;
+  font-family: inherit;
+  color: #374151;
+  cursor: pointer;
+  transition: border-color 0.2s, color 0.2s, background 0.2s;
+  white-space: nowrap;
+}
+
+.apps-withdraw-btn:hover:not(.apps-withdraw-btn--disabled) {
+  border-color: #EF4444;
+  color: #DC2626;
+  background: #FEF2F2;
+}
+
+.apps-withdraw-btn--disabled,
+.apps-withdraw-btn:disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
+  color: #9CA3AF;
+}
+
+/* ── Empty state ──────────────────────────────────────────────── */
+.apps-empty {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 72px 20px;
+  text-align: center;
+}
+
+.apps-empty-icon {
+  margin-bottom: 18px;
+  opacity: 0.55;
+}
+
+.apps-empty-title {
+  font-size: 18px;
+  font-weight: 700;
+  color: #374151;
+  margin: 0 0 8px 0;
+}
+
+.apps-empty-sub {
+  font-size: 14px;
+  color: #9CA3AF;
+  margin: 0;
+  line-height: 1.6;
+}
+
+.apps-empty-link {
+  color: #4F46E5;
+  font-weight: 600;
+  text-decoration: none;
+  transition: color 0.2s;
+}
+
+.apps-empty-link:hover {
+  color: #3730A3;
+  text-decoration: underline;
+}
+
+/* ── Skeleton loader ──────────────────────────────────────────── */
+.apps-skel-row td {
+  padding: 16px 16px;
+}
+
+.apps-skel {
+  background: linear-gradient(90deg, #F3F4F6 25%, #E5E7EB 50%, #F3F4F6 75%);
+  background-size: 200% 100%;
+  animation: apps-shimmer 1.4s infinite;
+  border-radius: 6px;
+}
+
+.apps-skel-title  { height: 15px; width: 70%; }
+.apps-skel-sub    { height: 13px; width: 55%; }
+.apps-skel-chip-sm { height: 22px; width: 80px; border-radius: 20px; }
+.apps-skel-date   { height: 13px; width: 80px; }
+.apps-skel-btn    { height: 30px; width: 78px; border-radius: 8px; margin-left: auto; }
+
+@keyframes apps-shimmer {
+  0%   { background-position: 200% 0; }
+  100% { background-position: -200% 0; }
+}
+
+/* ── Confirm Dialog ───────────────────────────────────────────── */
+.apps-dialog-backdrop {
+  position: fixed;
+  inset: 0;
+  background: rgba(17, 24, 39, 0.48);
+  backdrop-filter: blur(3px);
+  z-index: 1000;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 20px;
+}
+
+.apps-dialog {
+  background: #fff;
+  border-radius: 18px;
+  padding: 36px 32px 28px;
+  width: 100%;
+  max-width: 420px;
+  box-shadow: 0 24px 64px rgba(0, 0, 0, 0.2);
+  animation: apps-dialog-in 0.22s ease;
+  text-align: center;
+}
+
+@keyframes apps-dialog-in {
+  from { opacity: 0; transform: translateY(14px) scale(0.97); }
+  to   { opacity: 1; transform: translateY(0) scale(1); }
+}
+
+.apps-dialog-icon {
+  margin-bottom: 14px;
+}
+
+.apps-dialog-title {
+  font-size: 18px;
+  font-weight: 700;
+  color: #111827;
+  margin: 0 0 10px 0;
+}
+
+.apps-dialog-message {
+  font-size: 14px;
+  color: #6B7280;
+  line-height: 1.6;
+  margin: 0 0 24px 0;
+}
+
+.apps-dialog-actions {
+  display: flex;
+  gap: 12px;
+  justify-content: center;
+}
+
+.apps-dialog-cancel {
+  flex: 1;
+  padding: 11px 20px;
+  border: 1.5px solid #E5E7EB;
+  border-radius: 10px;
+  background: #fff;
+  font-size: 14px;
+  font-weight: 600;
+  font-family: inherit;
+  color: #374151;
+  cursor: pointer;
+  transition: border-color 0.2s, color 0.2s;
+}
+
+.apps-dialog-cancel:hover:not(:disabled) {
+  border-color: #9CA3AF;
+  color: #111827;
+}
+
+.apps-dialog-cancel:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.apps-dialog-confirm {
+  flex: 1;
+  padding: 11px 20px;
+  background: linear-gradient(135deg, #EF4444 0%, #DC2626 100%);
+  border: none;
+  border-radius: 10px;
+  font-size: 14px;
+  font-weight: 700;
+  font-family: inherit;
+  color: #fff;
+  cursor: pointer;
+  transition: opacity 0.2s, transform 0.2s, box-shadow 0.2s;
+}
+
+.apps-dialog-confirm:hover:not(:disabled) {
+  opacity: 0.9;
+  transform: translateY(-1px);
+  box-shadow: 0 5px 16px rgba(239, 68, 68, 0.38);
+}
+
+.apps-dialog-confirm:disabled {
+  opacity: 0.65;
+  cursor: not-allowed;
+}
+
+/* ── Responsive ───────────────────────────────────────────────── */
+@media (max-width: 900px) {
+  .apps-page {
+    padding: 24px 24px;
+  }
+
+  .apps-table th:nth-child(3),
+  .apps-table td:nth-child(3) {
+    display: none; /* hide Location column */
+  }
+}
+
+@media (max-width: 700px) {
+  .apps-page {
+    padding: 20px 16px;
+  }
+
+  .apps-table th:nth-child(4),
+  .apps-table td:nth-child(4) {
+    display: none; /* hide Type column */
+  }
+
+  .apps-table-wrap {
+    border-radius: 12px;
+  }
+
+  .apps-title {
+    font-size: 22px;
+  }
+}
+
+@media (max-width: 500px) {
+  .apps-table {
+    font-size: 13px;
+  }
+
+  .apps-table th,
+  .apps-table td {
+    padding: 12px 10px;
+  }
+
+  .apps-dialog {
+    padding: 28px 20px 22px;
+  }
+
+  .apps-dialog-actions {
+    flex-direction: column;
+  }
+}
