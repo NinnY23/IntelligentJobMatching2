@@ -21,10 +21,18 @@ export default function Applicants({ jobId }) {
   const [filter, setFilter] = useState('all');
   const [message, setMessage] = useState('');
   const navigate = useNavigate();
+  const [profileTarget, setProfileTarget] = useState(null);
 
   useEffect(() => {
     if (jobId) loadApplicants();
   }, [jobId]);
+
+  useEffect(() => {
+    if (!profileTarget) return;
+    const handler = (e) => { if (e.key === 'Escape') setProfileTarget(null); };
+    window.addEventListener('keydown', handler);
+    return () => window.removeEventListener('keydown', handler);
+  }, [profileTarget]);
 
   async function loadApplicants() {
     setLoading(true);
@@ -190,11 +198,122 @@ export default function Applicants({ jobId }) {
                   >
                     Message
                   </button>
+                  {' '}
+                  <button
+                    className="btn-sm"
+                    onClick={() => setProfileTarget(a)}
+                  >
+                    View Profile
+                  </button>
                 </td>
               </tr>
             ))}
           </tbody>
         </table>
+      )}
+
+      {profileTarget && (
+        <div className="modal-overlay" onClick={() => setProfileTarget(null)}>
+          <div
+            className="modal applicant-profile-modal"
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby="applicant-profile-title"
+            onClick={e => e.stopPropagation()}
+          >
+            <button
+              className="modal-close"
+              onClick={() => setProfileTarget(null)}
+              aria-label="Close"
+            >
+              ✕
+            </button>
+
+            {/* Header: avatar + name + email + status */}
+            <div className="applicant-profile-header">
+              <div className="profile-avatar-large">
+                {profileTarget.name.split(' ').map(w => w[0]).join('').slice(0, 2).toUpperCase()}
+              </div>
+              <div className="applicant-profile-header-info">
+                <h3 id="applicant-profile-title" className="applicant-profile-name">
+                  {profileTarget.name}
+                </h3>
+                <p className="applicant-profile-email">{profileTarget.email}</p>
+                <div className="applicant-profile-meta">
+                  <span className="profile-role-badge">job seeker</span>
+                  <span
+                    className="status-chip"
+                    style={{ background: STATUS_COLORS[profileTarget.status] || '#6b7280' }}
+                  >
+                    {profileTarget.status}
+                  </span>
+                  <span className="muted">
+                    Applied {new Date(profileTarget.applied_at).toLocaleDateString()}
+                  </span>
+                </div>
+              </div>
+            </div>
+
+            {/* Match score */}
+            <div className="applicant-profile-section">
+              <h4>Match Score</h4>
+              <span
+                className="score-badge"
+                style={{ background: SCORE_COLOR(profileTarget.match_score) }}
+              >
+                {profileTarget.match_score}% match
+              </span>
+            </div>
+
+            {/* Matched skills */}
+            {profileTarget.matched_skills.length > 0 && (
+              <div className="applicant-profile-section">
+                <h4>Matched Skills</h4>
+                <div className="skill-tags">
+                  {profileTarget.matched_skills.map(s => (
+                    <span key={s} className="skill-tag matched">{s}</span>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            {/* Missing skills */}
+            {profileTarget.missing_skills.length > 0 && (
+              <div className="applicant-profile-section">
+                <h4>Missing Skills</h4>
+                <div className="skill-tags">
+                  {profileTarget.missing_skills.map(s => (
+                    <span key={s} className="skill-tag missing">{s}</span>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            {/* About */}
+            {profileTarget.bio && (
+              <div className="applicant-profile-section">
+                <h4>About</h4>
+                <p>{profileTarget.bio}</p>
+              </div>
+            )}
+
+            {/* Education */}
+            {profileTarget.education && (
+              <div className="applicant-profile-section">
+                <h4>Education</h4>
+                <p>{profileTarget.education}</p>
+              </div>
+            )}
+
+            {/* Experience */}
+            {profileTarget.experience && (
+              <div className="applicant-profile-section">
+                <h4>Experience</h4>
+                <p>{profileTarget.experience}</p>
+              </div>
+            )}
+          </div>
+        </div>
       )}
     </div>
   );

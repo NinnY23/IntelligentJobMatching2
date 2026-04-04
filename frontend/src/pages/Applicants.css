@@ -54,3 +54,66 @@
 .muted { color: var(--color-muted); font-size: 12px; }
 
 @media (max-width: 768px) { .applicants-page { padding: 16px; } }
+
+/* View Profile modal */
+.applicant-profile-modal { max-width: 520px; }
+
+.applicant-profile-header {
+  display: flex;
+  align-items: flex-start;
+  gap: 16px;
+  margin-bottom: 4px;
+}
+
+.applicant-profile-header-info { flex: 1; min-width: 0; }
+
+.applicant-profile-name {
+  font-size: 18px;
+  font-weight: 700;
+  margin: 0 0 2px 0;
+  padding-right: 32px;
+}
+
+.applicant-profile-email {
+  font-size: 13px;
+  color: var(--color-muted);
+  margin: 0 0 8px 0;
+}
+
+.applicant-profile-meta {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.applicant-profile-section {
+  margin-top: 16px;
+  padding-top: 16px;
+  border-top: 1px solid var(--color-border);
+}
+
+.applicant-profile-section h4 {
+  font-size: 11px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: var(--color-muted);
+  margin: 0 0 8px 0;
+}
+
+.applicant-profile-section p {
+  font-size: 14px;
+  line-height: 1.6;
+  color: var(--color-text);
+  margin: 0;
+  white-space: pre-wrap;
+}
+
+/* Scoped avatar for modal — profile-avatar-large is 64px in Profile.css;
+   override to 56px for the more compact modal header */
+.applicant-profile-modal .profile-avatar-large {
+  width: 56px;
+  height: 56px;
+  font-size: 20px;
+}
