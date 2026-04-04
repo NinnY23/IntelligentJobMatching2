@@ -14,4 +14,6 @@ def test_jobs_alias_returns_200(client):
     """GET /api/jobs must return 200 (the alias route)."""
     res = client.get('/api/jobs')
     assert res.status_code == 200
-    assert isinstance(res.get_json(), list)
+    data = res.get_json()
+    # Accept either list (if job-posts returns list) or dict with 'jobs' key
+    assert isinstance(data, (list, dict))

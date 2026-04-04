@@ -13,6 +13,7 @@ Usage:
 
 import sys
 import os
+import bcrypt
 from app import app, db
 from models import User, Job
 from datetime import datetime
@@ -45,30 +46,33 @@ def seed_database():
             return False
         
         try:
+            # Hash passwords before storing (required for bcrypt login verification)
+            hashed_password = bcrypt.hashpw('password123'.encode('utf-8'), bcrypt.gensalt()).decode('utf-8')
+
             # Create sample users
             user1 = User(
                 email='john@example.com',
-                password='password123',
+                password=hashed_password,
                 name='John Doe',
                 phone='+1-234-567-8900',
                 location='San Francisco, CA',
                 bio='Full-stack developer with 5 years of experience',
                 skills='Python, JavaScript, React, AWS, Docker'
             )
-            
+
             user2 = User(
                 email='jane@example.com',
-                password='password123',
+                password=hashed_password,
                 name='Jane Smith',
                 phone='+1-345-678-9012',
                 location='New York, NY',
                 bio='Data scientist and ML engineer',
                 skills='Python, Machine Learning, TensorFlow, SQL, Pandas'
             )
-            
+
             user3 = User(
                 email='employer@company.com',
-                password='password123',
+                password=hashed_password,
                 name='Tech Company HR',
                 phone='+1-456-789-0123',
                 location='Austin, TX',

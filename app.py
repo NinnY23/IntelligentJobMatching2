@@ -106,14 +106,6 @@ def extract_skills_from_text(text):
             found_skills.append(skill.title())  # Capitalize first letter
     return found_skills
 
-def extract_text_from_pdf(pdf_file):
-    """Extract text from PDF file."""
-    pdf_reader = PyPDF2.PdfReader(pdf_file)
-    text = ""
-    for page in pdf_reader.pages:
-        text += page.extract_text()
-    return text
-
 app = Flask(__name__)
 CORS(app)
 
@@ -560,12 +552,7 @@ def get_job_posts():
 @app.route('/api/jobs', methods=['GET'])
 def get_jobs_alias():
     """Alias for /api/job-posts — kept for frontend compatibility."""
-    try:
-        jobs = Job.query.all()
-        jobs_list = [job.to_dict() for job in jobs]
-        return jsonify(jobs_list), 200
-    except Exception as e:
-        return jsonify({"message": str(e)}), 500
+    return get_job_posts()
 
 # ===== EMPLOYER ENDPOINTS (Role-Based Access) =====
 @app.route("/api/employer/candidates", methods=["GET"])
