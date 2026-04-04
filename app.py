@@ -3,7 +3,7 @@
 from dotenv import load_dotenv
 load_dotenv()
 
-from flask import Flask, request, jsonify
+from flask import Flask, request, jsonify, send_from_directory
 from flask_cors import CORS
 import json
 from datetime import datetime
@@ -21,14 +21,63 @@ import uuid
 from werkzeug.utils import secure_filename
 from prolog_engine import rank_candidates, rank_jobs as prolog_rank_jobs
 
-# Common skills to look for in resumes
-COMMON_SKILLS = [
-    'python', 'javascript', 'java', 'c++', 'c#', 'php', 'ruby', 'go', 'rust',
-    'html', 'css', 'react', 'angular', 'vue', 'node.js', 'express',
-    'sql', 'mysql', 'postgresql', 'mongodb', 'redis', 'docker', 'kubernetes',
-    'aws', 'azure', 'gcp', 'linux', 'git', 'agile', 'scrum', 'machine learning',
-    'data analysis', 'pandas', 'numpy', 'tensorflow', 'pytorch', 'flask', 'django'
-]
+# Skill lookup: lowercase key → correct display name
+# Used by extract_skills_from_text() for matching and casing
+SKILL_DISPLAY_NAMES = {
+    # Programming languages
+    'python': 'Python', 'javascript': 'JavaScript', 'typescript': 'TypeScript',
+    'java': 'Java', 'c++': 'C++', 'c#': 'C#', 'php': 'PHP', 'ruby': 'Ruby',
+    'go': 'Go', 'rust': 'Rust', 'swift': 'Swift', 'kotlin': 'Kotlin',
+    'scala': 'Scala', 'r': 'R', 'matlab': 'MATLAB', 'perl': 'Perl',
+    # Web frontend
+    'html': 'HTML', 'css': 'CSS', 'react': 'React', 'angular': 'Angular',
+    'vue': 'Vue', 'next.js': 'Next.js', 'tailwind': 'Tailwind',
+    'bootstrap': 'Bootstrap', 'sass': 'Sass', 'webpack': 'Webpack',
+    # Web backend
+    'node.js': 'Node.js', 'express': 'Express', 'flask': 'Flask',
+    'django': 'Django', 'spring': 'Spring', 'spring boot': 'Spring Boot',
+    'fastapi': 'FastAPI', 'laravel': 'Laravel', 'rails': 'Rails',
+    # Databases
+    'sql': 'SQL', 'mysql': 'MySQL', 'postgresql': 'PostgreSQL',
+    'mongodb': 'MongoDB', 'redis': 'Redis', 'sqlite': 'SQLite',
+    'elasticsearch': 'Elasticsearch', 'dynamodb': 'DynamoDB',
+    # Cloud & DevOps
+    'aws': 'AWS', 'azure': 'Azure', 'gcp': 'GCP', 'docker': 'Docker',
+    'kubernetes': 'Kubernetes', 'terraform': 'Terraform', 'ansible': 'Ansible',
+    'jenkins': 'Jenkins', 'ci/cd': 'CI/CD', 'nginx': 'Nginx',
+    # Data & ML
+    'machine learning': 'Machine Learning', 'deep learning': 'Deep Learning',
+    'data analysis': 'Data Analysis', 'data science': 'Data Science',
+    'pandas': 'Pandas', 'numpy': 'NumPy', 'tensorflow': 'TensorFlow',
+    'pytorch': 'PyTorch', 'scikit-learn': 'Scikit-learn', 'spark': 'Spark',
+    'hadoop': 'Hadoop', 'tableau': 'Tableau', 'power bi': 'Power BI',
+    # Tools & practices
+    'linux': 'Linux', 'git': 'Git', 'agile': 'Agile', 'scrum': 'Scrum',
+    'jira': 'Jira', 'figma': 'Figma', 'rest api': 'REST API',
+    'graphql': 'GraphQL', 'microservices': 'Microservices',
+    # Mobile
+    'react native': 'React Native', 'flutter': 'Flutter',
+    'android': 'Android', 'ios': 'iOS',
+    # Messaging & streaming
+    'kafka': 'Kafka', 'rabbitmq': 'RabbitMQ',
+}
+
+# Pre-compile skill patterns for performance
+_SKILL_PATTERNS = {}
+for _key in SKILL_DISPLAY_NAMES:
+    escaped = re.escape(_key)
+    # Short skills (<=2 chars like "r", "go", "c#") need strict delimiters
+    if len(_key) <= 2:
+        _SKILL_PATTERNS[_key] = re.compile(
+            r'(?:^|[\s,;:(])' + escaped + r'(?:$|[\s,;:)])',
+            re.IGNORECASE
+        )
+    else:
+        # Longer skills: no alphabetic char before or after
+        _SKILL_PATTERNS[_key] = re.compile(
+            r'(?<![a-zA-Z])' + escaped + r'(?![a-zA-Z])',
+            re.IGNORECASE
+        )
 
 # Education keywords
 EDUCATION_KEYWORDS = [
@@ -65,32 +114,112 @@ def extract_email(text):
 
 def extract_phone(text):
     """Extract phone number from text using regex."""
-    # Pattern for various phone formats
     phone_patterns = [
-        r'(\+?\d{1,3}[-.\s]?)?\(?\d{3}\)?[-.\s]?\d{3}[-.\s]?\d{4}',
-        r'(\+\d{1,3})\s?\d{1,14}',
+        r'\+?\d{1,3}[-.\s]?\(?\d{2,3}\)?[-.\s]?\d{3}[-.\s]?\d{4}',
+        r'\+\d{1,3}[-.\s]?\d[\d\-.\s]{6,14}\d',
         r'\b\d{10}\b'
     ]
     for pattern in phone_patterns:
-        phones = re.findall(pattern, text)
-        if phones:
-            return phones[0]
+        match = re.search(pattern, text)
+        if match:
+            return match.group(0)
     return None
 
 def extract_education(text):
-    """Extract education information from text."""
-    education_list = []
+    """Extract education entries from resume text."""
     lines = text.split('\n')
-    
+    education_list = []
+    in_education_section = False
+
     for line in lines:
-        line_lower = line.lower()
-        # Check if line contains education keywords
-        for keyword in EDUCATION_KEYWORDS:
-            if keyword in line_lower:
-                education_list.append(line.strip())
-                break
-    
-    return education_list[:3] if education_list else []  # Return top 3
+        stripped = line.strip()
+        if not stripped:
+            # A blank line ends the education section if we already collected entries
+            if in_education_section and education_list:
+                in_education_section = False
+            continue
+        line_lower = stripped.lower()
+
+        # Detect education section header
+        if ('education' in line_lower or 'academic' in line_lower) and len(stripped) < 40:
+            in_education_section = True
+            continue
+
+        # Stop if we hit another section header
+        if in_education_section and len(stripped) < 40:
+            if stripped.endswith(':') or stripped.isupper():
+                if not any(kw in line_lower for kw in EDUCATION_KEYWORDS):
+                    in_education_section = False
+                    continue
+
+        # Lines in an education section are collected directly
+        if in_education_section:
+            education_list.append(stripped)
+            continue
+
+        # Outside sections, require at least one degree keyword AND one institution keyword
+        degree_kws = ['bachelor', 'master', 'phd', 'degree', 'diploma', 'b.tech',
+                       'b.e.', 'm.tech', 'b.sc', 'm.sc', 'b.eng', 'm.eng']
+        institution_kws = ['university', 'college', 'institute', 'school', 'kmitl']
+        has_degree = any(kw in line_lower for kw in degree_kws)
+        has_institution = any(kw in line_lower for kw in institution_kws)
+        if has_degree and has_institution:
+            education_list.append(stripped)
+
+    return education_list[:5]
+
+# Experience-related keywords
+EXPERIENCE_KEYWORDS = [
+    'experience', 'work history', 'employment', 'professional experience',
+    'work experience', 'career'
+]
+
+EXPERIENCE_LINE_PATTERNS = [
+    # Lines with date ranges like (2020-2024), 2020–2024, Jan 2020 - Dec 2024
+    r'\d{4}\s*[-–—]\s*(?:\d{4}|present|current|now)',
+    # Lines with job title keywords
+    r'\b(?:engineer|developer|analyst|manager|designer|intern|lead|architect|consultant|coordinator|specialist|director|administrator)\b',
+    # Lines with "at" + company pattern
+    r'\b(?:at|@)\s+[A-Z]',
+]
+
+
+def extract_experience(text):
+    """Extract work experience entries from resume text."""
+    lines = text.split('\n')
+    experience_list = []
+    in_experience_section = False
+
+    for i, line in enumerate(lines):
+        stripped = line.strip()
+        if not stripped:
+            continue
+        line_lower = stripped.lower()
+
+        # Detect experience section header
+        if any(kw in line_lower for kw in EXPERIENCE_KEYWORDS) and len(stripped) < 40:
+            in_experience_section = True
+            continue
+
+        # Stop if we hit another section header (short line ending with ':' or all-caps)
+        if in_experience_section and len(stripped) < 40:
+            if stripped.endswith(':') or stripped.isupper():
+                if not any(re.search(p, stripped, re.IGNORECASE) for p in EXPERIENCE_LINE_PATTERNS):
+                    in_experience_section = False
+                    continue
+
+        # Collect lines in experience section
+        if in_experience_section:
+            experience_list.append(stripped)
+            continue
+
+        # Outside any section, check if line matches experience patterns
+        if any(re.search(p, stripped, re.IGNORECASE) for p in EXPERIENCE_LINE_PATTERNS):
+            # Exclude education lines
+            if not any(kw in line_lower for kw in EDUCATION_KEYWORDS):
+                experience_list.append(stripped)
+
+    return experience_list[:5]  # Return top 5 entries
 
 def extract_name(text):
     """Extract name using spaCy NER or from first line."""
@@ -107,12 +236,13 @@ def extract_name(text):
     return None
 
 def extract_skills_from_text(text):
-    """Extract skills from resume text by matching against common skills list."""
-    text_lower = text.lower()
+    """Extract skills from resume text using word-boundary matching."""
     found_skills = []
-    for skill in COMMON_SKILLS:
-        if skill in text_lower:
-            found_skills.append(skill.title())  # Capitalize first letter
+    seen_lower = set()
+    for skill_key, display_name in SKILL_DISPLAY_NAMES.items():
+        if skill_key not in seen_lower and _SKILL_PATTERNS[skill_key].search(text):
+            found_skills.append(display_name)
+            seen_lower.add(skill_key)
     return found_skills
 
 app = Flask(__name__)
@@ -429,11 +559,18 @@ def upload_resume():
         extracted_phone = extract_phone(pdf_text)
         extracted_skills = extract_skills_from_text(pdf_text)
         extracted_education = extract_education(pdf_text)
-        
-        # Update user's skills
+        extracted_experience = extract_experience(pdf_text)
+
+        # Merge skills with case-insensitive deduplication
+        # Prefer the display-name cased version (from extractor) over user-typed version
         existing_skills = user.get_skills_list()
-        all_skills = list(set(existing_skills + extracted_skills))
-        user.set_skills_list(all_skills)
+        seen_lower = {}
+        for skill in extracted_skills:
+            seen_lower[skill.lower()] = skill
+        for skill in existing_skills:
+            if skill.lower() not in seen_lower:
+                seen_lower[skill.lower()] = skill
+        user.set_skills_list(list(seen_lower.values()))
 
         # Auto-populate empty profile fields from resume
         fields_populated = 0
@@ -444,7 +581,10 @@ def upload_resume():
             user.phone = str(extracted_phone)
             fields_populated += 1
         if extracted_education and not user.education.strip():
-            user.education = '; '.join(extracted_education)
+            user.education = '\n'.join(extracted_education)
+            fields_populated += 1
+        if extracted_experience and not user.experience.strip():
+            user.experience = '\n'.join(extracted_experience)
             fields_populated += 1
 
         db.session.commit()
@@ -456,7 +596,8 @@ def upload_resume():
                 "email": extracted_email,
                 "phone": extracted_phone,
                 "skills": extracted_skills,
-                "education": extracted_education
+                "education": extracted_education,
+                "experience": extracted_experience
             },
             "extracted_skills": extracted_skills,
             "fields_populated": fields_populated,
@@ -485,11 +626,18 @@ def parse_resume_text():
         extracted_phone = extract_phone(resume_text)
         extracted_skills = extract_skills_from_text(resume_text)
         extracted_education = extract_education(resume_text)
-        
-        # Update user's skills
+        extracted_experience = extract_experience(resume_text)
+
+        # Merge skills with case-insensitive deduplication
+        # Prefer the display-name cased version (from extractor) over user-typed version
         existing_skills = user.get_skills_list()
-        all_skills = list(set(existing_skills + extracted_skills))
-        user.set_skills_list(all_skills)
+        seen_lower = {}
+        for skill in extracted_skills:
+            seen_lower[skill.lower()] = skill
+        for skill in existing_skills:
+            if skill.lower() not in seen_lower:
+                seen_lower[skill.lower()] = skill
+        user.set_skills_list(list(seen_lower.values()))
 
         # Auto-populate empty profile fields from resume
         fields_populated = 0
@@ -500,7 +648,10 @@ def parse_resume_text():
             user.phone = str(extracted_phone)
             fields_populated += 1
         if extracted_education and not user.education.strip():
-            user.education = '; '.join(extracted_education)
+            user.education = '\n'.join(extracted_education)
+            fields_populated += 1
+        if extracted_experience and not user.experience.strip():
+            user.experience = '\n'.join(extracted_experience)
             fields_populated += 1
 
         db.session.commit()
@@ -512,7 +663,8 @@ def parse_resume_text():
                 "email": extracted_email,
                 "phone": extracted_phone,
                 "skills": extracted_skills,
-                "education": extracted_education
+                "education": extracted_education,
+                "experience": extracted_experience
             },
             "extracted_skills": extracted_skills,
             "fields_populated": fields_populated,
@@ -838,13 +990,15 @@ def withdraw_application(app_id):
         return jsonify({"message": "Application not found"}), 404
     if application.status == 'shortlisted':
         return jsonify({"message": "Cannot withdraw a shortlisted application"}), 400
+    if application.status == 'withdrawn':
+        return jsonify({"message": "Application already withdrawn"}), 400
 
     job = Job.query.get(application.job_id)
     if job and (job.applicants or 0) > 0:
         job.applicants -= 1
-    db.session.delete(application)
+    application.status = 'withdrawn'
     db.session.commit()
-    return jsonify({"message": "Application withdrawn"}), 200
+    return jsonify({"message": "Application withdrawn", "application": application.to_dict()}), 200
 
 
 @app.route('/api/job-posts/<int:job_id>/applicants', methods=['GET'])
@@ -1146,13 +1300,23 @@ def mark_read(other_user_id):
 
 @app.route('/api/uploads/messages/<path:filepath>', methods=['GET'])
 def serve_message_file(filepath):
+    # Accept token from Authorization header OR query parameter
     user = get_current_user(request)
+    if not user:
+        # Fallback: check for token in query string (for <img src>, <a href>)
+        query_token = request.args.get('token')
+        if query_token:
+            try:
+                payload = pyjwt.decode(query_token, app.config['SECRET_KEY'], algorithms=['HS256'])
+                user = User.query.get(payload.get('user_id'))
+            except (pyjwt.ExpiredSignatureError, pyjwt.InvalidTokenError):
+                pass
     if not user:
         return jsonify({"message": "Unauthorized"}), 401
     parts_path = filepath.split('/')
     if len(parts_path) >= 1:
         try:
-            int(parts_path[0])  # validate it's numeric
+            int(parts_path[0])
         except (ValueError, IndexError):
             return jsonify({"message": "Invalid path"}), 400
     msg = Message.query.filter_by(
@@ -1162,8 +1326,7 @@ def serve_message_file(filepath):
     ).first()
     if not msg:
         return jsonify({"message": "Forbidden"}), 403
-    from flask import send_from_directory
-    upload_folder = app.config['UPLOAD_FOLDER']
+    upload_folder = os.path.join(app.config['UPLOAD_FOLDER'], 'messages')
     return send_from_directory(upload_folder, filepath)
 
 
