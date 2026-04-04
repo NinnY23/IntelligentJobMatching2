@@ -1,7 +1,4 @@
-// tests/JobMatch.test.jsx
-import { render } from '@testing-library/react';
-import JobMatch from '../src/JobMatch';
-
-test('renders placeholder', () => {
-  render(<JobMatch />);
+// Placeholder test suite - JobMatch component merged into Jobs page
+test('jobs page placeholder', () => {
+  expect(true).toBe(true);
 });
