@@ -13,6 +13,7 @@ import re
 import spacy
 import bcrypt
 from models import db, User, Job, Application, Message
+from sqlalchemy import or_, and_
 import os
 import uuid
 from werkzeug.utils import secure_filename
@@ -989,7 +990,6 @@ def get_conversations():
     if not user:
         return jsonify({"message": "Unauthorized"}), 401
 
-    from sqlalchemy import or_
     msgs = Message.query.filter(
         or_(Message.sender_id == user.id, Message.receiver_id == user.id)
     ).order_by(Message.created_at.desc()).all()
@@ -1018,7 +1018,6 @@ def get_thread(other_user_id):
     if not user:
         return jsonify({"message": "Unauthorized"}), 401
 
-    from sqlalchemy import or_, and_
     after = request.args.get('after')
 
     query = Message.query.filter(
@@ -1051,16 +1050,10 @@ def send_message(other_user_id):
     if not receiver:
         return jsonify({"message": "Recipient not found"}), 404
 
-    from sqlalchemy import or_
-    has_connection = Application.query.filter(
+    has_connection = Application.query.join(Job).filter(
         or_(
-            Application.user_id == user.id,
-            Application.user_id == other_user_id
-        )
-    ).join(Job).filter(
-        or_(
-            Job.employer_id == user.id,
-            Job.employer_id == other_user_id
+            and_(Application.user_id == user.id, Job.employer_id == other_user_id),
+            and_(Application.user_id == other_user_id, Job.employer_id == user.id)
         )
     ).first()
     if not has_connection:
@@ -1125,15 +1118,16 @@ def serve_message_file(filepath):
     parts_path = filepath.split('/')
     if len(parts_path) >= 1:
         try:
-            sender_id = int(parts_path[0])
-            if sender_id != user.id:
-                msg = Message.query.filter_by(
-                    attachment_path=f"messages/{filepath}", receiver_id=user.id
-                ).first()
-                if not msg:
-                    return jsonify({"message": "Forbidden"}), 403
+            int(parts_path[0])  # validate it's numeric
         except (ValueError, IndexError):
             return jsonify({"message": "Invalid path"}), 400
+    msg = Message.query.filter_by(
+        attachment_path=f"messages/{filepath}"
+    ).filter(
+        or_(Message.sender_id == user.id, Message.receiver_id == user.id)
+    ).first()
+    if not msg:
+        return jsonify({"message": "Forbidden"}), 403
     from flask import send_from_directory
     upload_folder = app.config['UPLOAD_FOLDER']
     return send_from_directory(upload_folder, filepath)
