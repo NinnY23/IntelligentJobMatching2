@@ -122,7 +122,17 @@
 
 .form-actions { display: flex; gap: 12px; justify-content: flex-end; margin-top: 24px; }
 
+@media (max-width: 768px) {
+  .profile-page { padding: 0 12px; margin: 16px auto; }
+  .profile-form-card { padding: 20px; }
+  .profile-header-card { padding: 20px; }
+  .form-actions { flex-direction: column; }
+  .form-actions button { width: 100%; }
+}
+
 @media (max-width: 600px) {
   .form-grid { grid-template-columns: 1fr; }
   .profile-header-card { flex-direction: column; text-align: center; }
+  .skills-input-row { flex-direction: column; }
+  .skills-input-row input { width: 100%; box-sizing: border-box; }
 }

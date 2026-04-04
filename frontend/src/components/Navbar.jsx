@@ -1,10 +1,11 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import './Navbar.css';
 
 export default function Navbar({ user, onLogout, unreadMessages = 0 }) {
   const navigate = useNavigate();
   const location = useLocation();
+  const [menuOpen, setMenuOpen] = useState(false);
   const isActive = (path) => location.pathname === path;
 
   const employeeLinks = [
@@ -38,7 +39,10 @@ export default function Navbar({ user, onLogout, unreadMessages = 0 }) {
       >
         JobMatch<span>AI</span>
       </div>
-      <div className="navbar-links">
+      <button className="nav-hamburger" onClick={() => setMenuOpen(!menuOpen)} aria-label="Toggle menu">
+        {menuOpen ? '✕' : '☰'}
+      </button>
+      <div className={`navbar-links${menuOpen ? ' nav-links-open' : ''}`}>
         {links.map(link => (
           <button
             key={link.path}

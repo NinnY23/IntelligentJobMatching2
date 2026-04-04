@@ -105,3 +105,19 @@
 }
 
 .auth-footer button:hover { text-decoration: underline; }
+
+@media (max-width: 480px) {
+  .auth-card {
+    padding: 28px 20px;
+    border-radius: 12px;
+    margin: 0 12px;
+  }
+
+  .auth-title { font-size: 18px; }
+  .auth-logo { font-size: 20px; }
+
+  .form-group input,
+  .form-group select {
+    font-size: 16px; /* prevent iOS zoom on focus */
+  }
+}

@@ -56,6 +56,14 @@
 
 .modal-actions { display: flex; gap: 12px; justify-content: flex-end; margin-top: 24px; }
 
+@media (max-width: 768px) {
+  .my-jobs-page { padding: 16px; overflow-x: hidden; }
+  .page-header { flex-direction: column; align-items: flex-start; gap: 12px; }
+  .jobs-table { display: block; overflow-x: auto; -webkit-overflow-scrolling: touch; min-width: 0; }
+  .action-cell { flex-direction: column; gap: 4px; }
+  .action-cell button { width: 100%; box-sizing: border-box; }
+}
+
 @media (max-width: 700px) {
   .form-grid { grid-template-columns: 1fr; }
   .my-jobs-page { padding: 16px; }

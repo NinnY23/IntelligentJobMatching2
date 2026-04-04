@@ -48,6 +48,14 @@
 .activity-item:last-child { border-bottom: none; }
 .activity-info { flex: 1; min-width: 0; }
 
+@media (max-width: 768px) {
+  .dashboard-page { padding: 20px; }
+  .stats-grid { grid-template-columns: repeat(2, 1fr); }
+  .dashboard-actions { flex-direction: column; }
+  .dashboard-actions button,
+  .dashboard-actions a { width: 100%; box-sizing: border-box; }
+}
+
 @media (max-width: 600px) {
   .stats-grid { grid-template-columns: 1fr; }
   .dashboard-page { padding: 16px; }

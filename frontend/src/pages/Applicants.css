@@ -53,7 +53,17 @@
 
 .muted { color: var(--color-muted); font-size: 12px; }
 
-@media (max-width: 768px) { .applicants-page { padding: 16px; } }
+@media (max-width: 768px) {
+  .applicants-page { padding: 16px; overflow-x: hidden; }
+  .filter-bar { flex-wrap: wrap; }
+  .applicants-table { display: block; overflow-x: auto; -webkit-overflow-scrolling: touch; }
+}
+
+@media (max-width: 600px) {
+  .applicant-profile-header { flex-direction: column; align-items: center; text-align: center; }
+  .applicant-profile-name { padding-right: 0; }
+  .applicant-profile-meta { justify-content: center; }
+}
 
 /* View Profile modal */
 .applicant-profile-modal { max-width: 520px; }
