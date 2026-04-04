@@ -18,15 +18,12 @@ export default function Messages({ user }) {
   const [searchParams] = useSearchParams();
 
   useEffect(() => {
+    loadConversations();
     const partnerId = searchParams.get('partner');
     if (partnerId) {
       setActivePartnerId(Number(partnerId));
     }
-  }, []);
-
-  useEffect(() => {
-    loadConversations();
-  }, []);
+  }, [searchParams]);
 
   useEffect(() => {
     if (activePartnerId) {

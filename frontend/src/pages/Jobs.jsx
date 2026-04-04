@@ -231,7 +231,7 @@ function JobModal({ job, onClose, isEmployee, onMessageEmployer }) {
             {job.employer_id && (
               <button
                 className="jobs-message-btn"
-                onClick={() => onMessageEmployer(job.employer_id)}
+                onClick={() => onMessageEmployer?.(job.employer_id)}
               >
                 Message Employer
               </button>
