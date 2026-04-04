@@ -1,5 +1,6 @@
 // frontend/src/pages/Applicants.jsx
 import React, { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
 import './Applicants.css';
 
 const SCORE_COLOR = score => {
@@ -19,6 +20,7 @@ export default function Applicants({ jobId }) {
   const [loading, setLoading] = useState(true);
   const [filter, setFilter] = useState('all');
   const [message, setMessage] = useState('');
+  const navigate = useNavigate();
 
   useEffect(() => {
     if (jobId) loadApplicants();
@@ -181,6 +183,13 @@ export default function Applicants({ jobId }) {
                       Unshortlist
                     </button>
                   )}
+                  {' '}
+                  <button
+                    className="btn-sm"
+                    onClick={() => navigate(`/messages?partner=${a.user_id}`)}
+                  >
+                    Message
+                  </button>
                 </td>
               </tr>
             ))}
