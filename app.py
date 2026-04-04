@@ -919,6 +919,9 @@ def employer_dashboard(employer):
         if job_ids else 0
     )
 
+    # Build lookup dicts to avoid N+1 queries
+    jobs_by_id = {j.id: j for j in jobs}
+
     recent_apps = (
         Application.query
         .filter(Application.job_id.in_(job_ids))
@@ -928,17 +931,26 @@ def employer_dashboard(employer):
         if job_ids else []
     )
 
+    # Batch-load applicant users
+    applicant_ids = [a.user_id for a in recent_apps]
+    users_by_id = {u.id: u for u in User.query.filter(User.id.in_(applicant_ids)).all()} if applicant_ids else {}
+
     recent = []
     for a in recent_apps:
-        applicant = User.query.get(a.user_id)
-        job = Job.query.get(a.job_id)
-        if applicant and job:
-            recent.append({
-                'applicant_name': applicant.name,
-                'job_position': job.position,
-                'applied_at': a.created_at.isoformat(),
-                'status': a.status,
-            })
+        applicant = users_by_id.get(a.user_id)
+        job = jobs_by_id.get(a.job_id)
+        if not applicant or not job:
+            app.logger.warning(
+                f"Dashboard: missing record for application {a.id} "
+                f"(user_id={a.user_id}, job_id={a.job_id})"
+            )
+            continue
+        recent.append({
+            'applicant_name': applicant.name,
+            'job_position': job.position,
+            'applied_at': a.created_at.isoformat(),
+            'status': a.status,
+        })
 
     return jsonify({
         'total_jobs': total_jobs,
