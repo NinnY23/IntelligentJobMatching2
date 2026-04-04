@@ -1,5 +1,6 @@
 // frontend/src/pages/Applicants.jsx
 import React, { useState, useEffect } from 'react';
+import './Applicants.css';
 
 const SCORE_COLOR = score => {
   if (score >= 80) return '#16a34a';

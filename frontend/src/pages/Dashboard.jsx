@@ -1,5 +1,6 @@
 // frontend/src/pages/Dashboard.jsx
 import React, { useState, useEffect } from 'react';
+import './Dashboard.css';
 
 const STATUS_CHIP_COLORS = {
   pending: '#4F46E5',

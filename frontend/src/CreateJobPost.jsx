@@ -100,15 +100,11 @@ export default function CreateJobPost({ onPostCreated, onBack }) {
   };
 
   return (
-    <div className="create-job-container">
-      <div className="create-job-header">
-        <button className="back-btn" onClick={onBack}>← Back</button>
-        <h1>Post a New Job</h1>
-      </div>
-
-      <div className="create-job-content">
-        <form onSubmit={handleSubmit} className="job-form">
-          <div className="form-row">
+    <div className="create-job-page">
+      <h2>Post a New Job</h2>
+      <div className="create-job-card">
+        <form onSubmit={handleSubmit}>
+          <div className="form-grid">
             <div className="form-group">
               <label htmlFor="position">Job Title *</label>
               <input
@@ -134,9 +130,7 @@ export default function CreateJobPost({ onPostCreated, onBack }) {
                 required
               />
             </div>
-          </div>
 
-          <div className="form-row">
             <div className="form-group">
               <label htmlFor="location">Location *</label>
               <input
@@ -165,9 +159,7 @@ export default function CreateJobPost({ onPostCreated, onBack }) {
                 <option value="Internship">Internship</option>
               </select>
             </div>
-          </div>
 
-          <div className="form-row">
             <div className="form-group">
               <label htmlFor="salaryMin">Minimum Salary ($)</label>
               <input
@@ -203,53 +195,53 @@ export default function CreateJobPost({ onPostCreated, onBack }) {
                 min="1"
               />
             </div>
+
+            <div className="form-group full-width">
+              <label htmlFor="description">Job Description *</label>
+              <textarea
+                id="description"
+                name="description"
+                value={formData.description}
+                onChange={handleInputChange}
+                placeholder="Describe the job responsibilities, requirements, and benefits..."
+                rows="8"
+                required
+              />
+            </div>
+
+            <div className="form-group full-width">
+              <label htmlFor="skills">Required Skills (comma-separated)</label>
+              <input
+                id="skills"
+                type="text"
+                name="skills"
+                value={formData.skills}
+                onChange={handleInputChange}
+                placeholder="e.g., React, Node.js, JavaScript"
+              />
+            </div>
+
+            <div className="form-group full-width">
+              <label htmlFor="deadline">Application Deadline</label>
+              <input
+                id="deadline"
+                type="date"
+                name="deadline"
+                value={formData.deadline}
+                onChange={handleInputChange}
+              />
+            </div>
           </div>
 
-          <div className="form-group full-width">
-            <label htmlFor="description">Job Description *</label>
-            <textarea
-              id="description"
-              name="description"
-              value={formData.description}
-              onChange={handleInputChange}
-              placeholder="Describe the job responsibilities, requirements, and benefits..."
-              rows="8"
-              required
-            />
-          </div>
-
-          <div className="form-group full-width">
-            <label htmlFor="skills">Required Skills (comma-separated)</label>
-            <input
-              id="skills"
-              type="text"
-              name="skills"
-              value={formData.skills}
-              onChange={handleInputChange}
-              placeholder="e.g., React, Node.js, JavaScript"
-            />
-          </div>
-
-          <div className="form-group full-width">
-            <label htmlFor="deadline">Application Deadline</label>
-            <input
-              id="deadline"
-              type="date"
-              name="deadline"
-              value={formData.deadline}
-              onChange={handleInputChange}
-            />
-          </div>
-
-          {error && <div className="error-message">{error}</div>}
-          {success && <div className="success-message">{success}</div>}
+          {error && <div className="form-error-msg">{error}</div>}
+          {success && <div className="form-success">{success}</div>}
 
           <div className="form-actions">
-            <button type="submit" disabled={loading} className="submit-btn">
-              {loading ? 'Posting...' : 'Post Job'}
-            </button>
-            <button type="button" onClick={onBack} className="cancel-btn">
+            <button type="button" onClick={onBack} className="btn-outline">
               Cancel
+            </button>
+            <button type="submit" disabled={loading} className="btn-primary">
+              {loading ? 'Posting...' : 'Post Job'}
             </button>
           </div>
         </form>

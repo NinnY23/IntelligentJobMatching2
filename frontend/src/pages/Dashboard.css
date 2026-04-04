@@ -1,0 +1,54 @@
+.dashboard-page { padding: 32px; max-width: 900px; margin: 0 auto; }
+.dashboard-page h2 { font-size: 22px; font-weight: 800; margin-bottom: 24px; color: var(--color-text); }
+
+.stats-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 16px;
+  margin-bottom: 28px;
+}
+
+.stat-card {
+  background: #fff;
+  border-radius: var(--radius);
+  padding: 24px;
+  box-shadow: var(--shadow);
+  text-align: center;
+  border-top: 3px solid var(--color-primary);
+  border: 1px solid var(--color-border);
+  border-top: 3px solid var(--color-primary);
+  transition: transform 0.15s, box-shadow 0.15s;
+}
+.stat-card:hover { transform: translateY(-2px); box-shadow: var(--shadow-md); }
+
+.stat-number { font-size: 36px; font-weight: 800; color: var(--color-primary); }
+.stat-label { font-size: 13px; color: var(--color-muted); margin-top: 4px; font-weight: 600; }
+
+.dashboard-actions { display: flex; gap: 12px; margin-bottom: 28px; }
+
+.recent-activity {
+  background: #fff;
+  border-radius: var(--radius);
+  padding: 24px;
+  box-shadow: var(--shadow);
+  border: 1px solid var(--color-border);
+}
+.recent-activity h3 { font-size: 15px; font-weight: 700; margin-bottom: 16px; }
+.activity-list { list-style: none; }
+.activity-item {
+  padding: 12px 0;
+  border-bottom: 1px solid var(--color-border);
+  font-size: 14px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+.activity-item:last-child { border-bottom: none; }
+.activity-info { flex: 1; min-width: 0; }
+
+@media (max-width: 600px) {
+  .stats-grid { grid-template-columns: 1fr; }
+  .dashboard-page { padding: 16px; }
+}

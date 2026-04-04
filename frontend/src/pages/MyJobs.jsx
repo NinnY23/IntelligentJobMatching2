@@ -1,5 +1,6 @@
 // frontend/src/pages/MyJobs.jsx
 import React, { useState, useEffect } from 'react';
+import './MyJobs.css';
 
 export default function MyJobs({ user, navigate }) {
   const [jobs, setJobs] = useState([]);
