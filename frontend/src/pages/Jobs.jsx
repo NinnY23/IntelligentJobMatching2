@@ -61,6 +61,23 @@ function MatchBadge({ score }) {
   );
 }
 
+function MatchBar({ score }) {
+  if (score == null) return null;
+  const pct = Math.round(score);
+  let color = '#4F46E5';
+  if (pct >= 80) color = '#16a34a';
+  else if (pct >= 50) color = '#f59e0b';
+  else color = '#9CA3AF';
+  return (
+    <div className="jobs-match-bar-container">
+      <div className="jobs-match-bar">
+        <div className="jobs-match-bar-fill" style={{ width: `${pct}%`, background: color }} />
+      </div>
+      <span className="jobs-match-bar-label">{pct}%</span>
+    </div>
+  );
+}
+
 function SkillChip({ skill, variant }) {
   // variant: 'matched' | 'missing' | 'neutral'
   const styles = {
@@ -219,6 +236,13 @@ function JobModal({ job, onClose, isEmployee, onMessageEmployer }) {
           </div>
         )}
 
+        {job.match_score != null && (
+          <div className="jobs-modal-section">
+            <h3 className="jobs-modal-section-title">Match Score</h3>
+            <MatchBar score={job.match_score} />
+          </div>
+        )}
+
         {isEmployee && (
           <div className="jobs-modal-actions">
             <button
@@ -289,6 +313,8 @@ function JobCard({ job, onClick, isEmployee }) {
           )}
         </div>
       )}
+
+      {job.match_score != null && <MatchBar score={job.match_score} />}
     </article>
   );
 }

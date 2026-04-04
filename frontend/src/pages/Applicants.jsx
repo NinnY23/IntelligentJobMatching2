@@ -9,6 +9,22 @@ const SCORE_COLOR = score => {
   return '#9ca3af';
 };
 
+function MatchBar({ score }) {
+  const pct = Math.round(score);
+  let color = '#4F46E5';
+  if (pct >= 80) color = '#16a34a';
+  else if (pct >= 50) color = '#f59e0b';
+  else color = '#9CA3AF';
+  return (
+    <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginTop: '8px' }}>
+      <div style={{ flex: 1, height: '8px', background: '#e5e7eb', borderRadius: '4px', overflow: 'hidden' }}>
+        <div style={{ height: '100%', width: `${pct}%`, background: color, borderRadius: '4px' }} />
+      </div>
+      <span style={{ fontSize: '13px', fontWeight: 600 }}>{pct}%</span>
+    </div>
+  );
+}
+
 const STATUS_COLORS = {
   pending: '#4F46E5',
   shortlisted: '#16a34a',
@@ -263,6 +279,7 @@ export default function Applicants({ jobId }) {
               >
                 {profileTarget.match_score}% match
               </span>
+              {profileTarget.match_score != null && <MatchBar score={profileTarget.match_score} />}
             </div>
 
             {/* Matched skills */}
