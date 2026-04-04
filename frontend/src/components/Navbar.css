@@ -1,0 +1,118 @@
+.navbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  background: #fff;
+  border-bottom: 1px solid var(--color-border);
+  padding: 0 32px;
+  height: 60px;
+  position: sticky;
+  top: 0;
+  z-index: 100;
+  box-shadow: var(--shadow);
+}
+
+.navbar-brand {
+  font-size: 18px;
+  font-weight: 800;
+  color: var(--color-primary-dark);
+  cursor: pointer;
+  letter-spacing: -0.5px;
+  user-select: none;
+}
+.navbar-brand span { color: var(--color-primary); }
+
+.navbar-links { display: flex; gap: 2px; }
+
+.nav-link {
+  background: none;
+  border: none;
+  padding: 6px 14px;
+  border-radius: 6px;
+  font-size: 14px;
+  font-weight: 500;
+  color: var(--color-muted);
+  cursor: pointer;
+  position: relative;
+  transition: all 0.15s;
+  font-family: var(--font);
+  white-space: nowrap;
+}
+.nav-link:hover { color: var(--color-primary); background: var(--color-primary-light); }
+.nav-link.active {
+  color: var(--color-primary-dark);
+  font-weight: 700;
+  background: var(--color-primary-light);
+}
+
+.nav-badge {
+  position: absolute;
+  top: 2px;
+  right: 4px;
+  background: #ef4444;
+  color: #fff;
+  font-size: 9px;
+  font-weight: 700;
+  padding: 1px 5px;
+  border-radius: 8px;
+  min-width: 16px;
+  text-align: center;
+}
+
+.navbar-user {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.avatar {
+  width: 34px;
+  height: 34px;
+  border-radius: 50%;
+  background: var(--color-primary-light);
+  color: var(--color-primary-dark);
+  font-weight: 700;
+  font-size: 13px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.navbar-name {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--color-text);
+  max-width: 120px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.btn-logout {
+  background: none;
+  border: 1px solid var(--color-border);
+  border-radius: 6px;
+  padding: 5px 12px;
+  font-size: 13px;
+  color: var(--color-muted);
+  cursor: pointer;
+  font-family: var(--font);
+  transition: all 0.15s;
+}
+.btn-logout:hover {
+  background: var(--color-danger-light);
+  color: var(--color-danger);
+  border-color: var(--color-danger);
+}
+
+@media (max-width: 900px) {
+  .navbar { padding: 0 16px; }
+  .nav-link { padding: 6px 8px; font-size: 12px; }
+  .navbar-name { display: none; }
+}
+
+@media (max-width: 600px) {
+  .navbar-links { gap: 0; }
+  .nav-link { padding: 5px 6px; font-size: 11px; }
+}
