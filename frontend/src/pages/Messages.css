@@ -263,4 +263,10 @@
     cursor: pointer;
     font-family: var(--font);
   }
+
+.msg-read-tick {
+  opacity: 0.85;
+  font-size: 11px;
+  margin-left: 3px;
+}
 }

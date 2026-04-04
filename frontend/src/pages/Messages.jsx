@@ -156,6 +156,7 @@ export default function Messages({ user }) {
                     )}
                     <span className="msg-time">
                       {new Date(msg.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                      {isMine && msg.read && <span className="msg-read-tick" aria-label="Read"> ✓</span>}
                     </span>
                   </div>
                 );
