@@ -1,5 +1,6 @@
 // src/pages/Jobs.jsx
 import React, { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { fetchJobMatches, fetchJobPosts, applyForJob } from '../api';
 import './Jobs.css';
 
@@ -92,7 +93,7 @@ function Toast({ message, type, onClose }) {
   );
 }
 
-function JobModal({ job, onClose, isEmployee }) {
+function JobModal({ job, onClose, isEmployee, onMessageEmployer }) {
   const [applying, setApplying] = useState(false);
   const [toast, setToast] = useState(null);
 
@@ -227,6 +228,14 @@ function JobModal({ job, onClose, isEmployee }) {
             >
               {applying ? 'Submitting…' : 'Apply Now'}
             </button>
+            {job.employer_id && (
+              <button
+                className="jobs-message-btn"
+                onClick={() => onMessageEmployer(job.employer_id)}
+              >
+                Message Employer
+              </button>
+            )}
           </div>
         )}
       </div>
@@ -296,6 +305,7 @@ export default function Jobs() {
   const [locationFilter, setLocationFilter] = useState('');
   const [typeFilter, setTypeFilter] = useState('All');
   const [minMatch, setMinMatch] = useState(0);
+  const navigate = useNavigate();
 
   // Determine role
   const userRaw = localStorage.getItem('user');
@@ -455,6 +465,7 @@ export default function Jobs() {
           job={selectedJob}
           isEmployee={isEmployee}
           onClose={() => setSelectedJob(null)}
+          onMessageEmployer={(employerId) => navigate(`/messages?partner=${employerId}`)}
         />
       )}
     </div>

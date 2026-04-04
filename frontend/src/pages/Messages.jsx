@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
+import { useSearchParams } from 'react-router-dom';
 import { fetchConversations, fetchThread, sendMessage, markThreadRead } from '../api';
 import './Messages.css';
 
@@ -13,6 +14,15 @@ export default function Messages({ user }) {
   const bottomRef = useRef(null);
   const pollRef = useRef(null);
   const lastTimestampRef = useRef(null);
+
+  const [searchParams] = useSearchParams();
+
+  useEffect(() => {
+    const partnerId = searchParams.get('partner');
+    if (partnerId) {
+      setActivePartnerId(Number(partnerId));
+    }
+  }, []);
 
   useEffect(() => {
     loadConversations();
