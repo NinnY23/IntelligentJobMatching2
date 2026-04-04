@@ -1,10 +1,12 @@
 # app.py
 
+from dotenv import load_dotenv
+load_dotenv()
+
 from flask import Flask, request, jsonify
 from flask_cors import CORS
 import json
 from datetime import datetime
-import PyPDF2
 import io
 import fitz  # PyMuPDF
 import re
@@ -118,8 +120,12 @@ CORS(app)
 BASE_DIR = os.path.abspath(os.path.dirname(__file__))
 
 # Use MySQL for production
-app.config['SQLALCHEMY_DATABASE_URI'] = 'mysql+pymysql://root:LiShuang4330%40@localhost:3306/intelligent_job_matching'
-
+app.config['SQLALCHEMY_DATABASE_URI'] = os.environ.get(
+    'DB_URI',
+    'mysql+pymysql://root:password@localhost:3306/intelligent_job_matching'
+)
+app.config['SECRET_KEY'] = os.environ.get('SECRET_KEY', 'dev-secret')
+app.config['UPLOAD_FOLDER'] = os.environ.get('UPLOAD_FOLDER', 'uploads')
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 
 # Initialize SQLAlchemy
