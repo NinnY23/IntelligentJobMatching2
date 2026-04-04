@@ -486,24 +486,6 @@ def parse_resume_text():
 def match_jobs():
     return jsonify({"status": "ok"})
 
-@app.route("/api/debug/users", methods=["GET"])
-def get_all_users():
-    """Debug endpoint - View all registered users (remove in production)"""
-    try:
-        users = User.query.all()
-        users_dict = {}
-        
-        for user in users:
-            user_data = user.to_dict()
-            users_dict[user.email] = user_data
-        
-        return jsonify({
-            "total_users": len(users),
-            "users": users_dict
-        }), 200
-    except Exception as e:
-        return jsonify({"message": str(e)}), 500
-
 @app.route("/api/job-posts", methods=["POST"])
 def create_job_post():
     try:
@@ -575,17 +557,13 @@ def get_job_posts():
     except Exception as e:
         return jsonify({"message": str(e)}), 500
 
-@app.route("/api/debug/jobs", methods=["GET"])
-def debug_get_jobs():
-    """Debug endpoint - View all job posts"""
+@app.route('/api/jobs', methods=['GET'])
+def get_jobs_alias():
+    """Alias for /api/job-posts — kept for frontend compatibility."""
     try:
         jobs = Job.query.all()
-        jobs_dict = {job.id: job.to_dict() for job in jobs}
-        
-        return jsonify({
-            "total_jobs": len(jobs),
-            "jobs": jobs_dict
-        }), 200
+        jobs_list = [job.to_dict() for job in jobs]
+        return jsonify(jobs_list), 200
     except Exception as e:
         return jsonify({"message": str(e)}), 500
 

@@ -15,12 +15,18 @@ export async function loginUser(email, password) {
   return res.json();
 }
 
-export async function fetchJobs() {
+export async function fetchJobPosts() {
   const token = localStorage.getItem('token');
-  const res = await fetch('/api/jobs', {
-    headers: {
-      'Authorization': `Bearer ${token}`,
-    },
+  const res = await fetch('/api/job-posts', {
+    headers: { 'Authorization': `Bearer ${token}` },
+  });
+  return res.json();
+}
+
+export async function fetchJobMatches() {
+  const token = localStorage.getItem('token');
+  const res = await fetch('/api/jobs/matches', {
+    headers: { 'Authorization': `Bearer ${token}` },
   });
   return res.json();
 }
