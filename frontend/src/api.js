@@ -164,3 +164,55 @@ export async function fetchEmployerDashboard() {
   if (!res.ok) throw new Error('Failed to fetch dashboard');
   return res.json();
 }
+
+export async function fetchConversations() {
+  const token = localStorage.getItem('token');
+  const res = await fetch('/api/messages', {
+    headers: { 'Authorization': `Bearer ${token}` }
+  });
+  if (!res.ok) throw new Error('Failed to fetch conversations');
+  return res.json();
+}
+
+export async function fetchThread(userId, after = null) {
+  const token = localStorage.getItem('token');
+  const url = after
+    ? `/api/messages/${userId}?after=${encodeURIComponent(after)}`
+    : `/api/messages/${userId}`;
+  const res = await fetch(url, {
+    headers: { 'Authorization': `Bearer ${token}` }
+  });
+  if (!res.ok) throw new Error('Failed to fetch messages');
+  return res.json();
+}
+
+export async function sendMessage(userId, body, attachmentFile = null) {
+  const token = localStorage.getItem('token');
+  const formData = new FormData();
+  if (body) formData.append('body', body);
+  if (attachmentFile) formData.append('attachment', attachmentFile);
+  const res = await fetch(`/api/messages/${userId}`, {
+    method: 'POST',
+    headers: { 'Authorization': `Bearer ${token}` },
+    body: formData
+  });
+  return { ok: res.ok, status: res.status, data: await res.json() };
+}
+
+export async function markThreadRead(userId) {
+  const token = localStorage.getItem('token');
+  await fetch(`/api/messages/${userId}/read`, {
+    method: 'PATCH',
+    headers: { 'Authorization': `Bearer ${token}` }
+  });
+}
+
+export async function fetchUnreadCount() {
+  const token = localStorage.getItem('token');
+  const res = await fetch('/api/messages', {
+    headers: { 'Authorization': `Bearer ${token}` }
+  });
+  if (!res.ok) return 0;
+  const convos = await res.json();
+  return convos.reduce((sum, c) => sum + (c.unread_count || 0), 0);
+}
