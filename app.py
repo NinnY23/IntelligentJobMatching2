@@ -118,12 +118,11 @@ CORS(app)
 # SQLAlchemy Configuration
 BASE_DIR = os.path.abspath(os.path.dirname(__file__))
 
-# Use MySQL for production
 app.config['SQLALCHEMY_DATABASE_URI'] = os.environ.get(
     'DB_URI',
-    'mysql+pymysql://root:password@localhost:3306/intelligent_job_matching'
+    'sqlite:///dev.db'
 )
-app.config['SECRET_KEY'] = os.environ.get('SECRET_KEY', 'dev-secret')
+app.config['SECRET_KEY'] = os.environ.get('SECRET_KEY', 'dev-secret-change-in-production')
 app.config['UPLOAD_FOLDER'] = os.environ.get('UPLOAD_FOLDER', 'uploads')
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 
