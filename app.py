@@ -11,6 +11,7 @@ import io
 import fitz  # PyMuPDF
 import re
 import spacy
+import bcrypt
 from models import db, User, Job
 import os
 
@@ -34,7 +35,7 @@ EDUCATION_KEYWORDS = [
 try:
     nlp = spacy.load('en_core_web_sm')
 except OSError:
-    print("⚠️ Warning: spaCy model 'en_core_web_sm' not found.")
+    print("Warning: spaCy model 'en_core_web_sm' not found.")
     print("   Name extraction will use fallback method (first line of resume)")
     nlp = None
 
@@ -131,9 +132,6 @@ app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 # Initialize SQLAlchemy
 db.init_app(app)
 
-# Create database tables
-with app.app_context():
-    db.create_all()
 
 # Global variable for job counter (for ID generation as fallback)
 job_counter = 1
@@ -213,10 +211,16 @@ def signup():
         if existing_user:
             return jsonify({"message": "Email already exists"}), 400
         
+        # Hash the password before storing
+        hashed_password = bcrypt.hashpw(
+            password.encode('utf-8'),
+            bcrypt.gensalt()
+        ).decode('utf-8')
+
         # Create new user with role
         new_user = User(
             email=email,
-            password=password,  # In production: use bcrypt.hashpw()
+            password=hashed_password,
             name=name,
             phone='',
             location='',
@@ -252,7 +256,10 @@ def login():
         # Query user from database
         user = User.query.filter_by(email=email).first()
         
-        if not user or user.password != password:  # In production: use bcrypt.checkpw()
+        if not user or not bcrypt.checkpw(
+            password.encode('utf-8'),
+            user.password.encode('utf-8')
+        ):
             return jsonify({"message": "Invalid email or password"}), 401
         
         # Generate fake token
@@ -663,4 +670,6 @@ def get_employer_jobs(user):
         return jsonify({"message": str(e)}), 500
 
 if __name__ == "__main__":
+    with app.app_context():
+        db.create_all()
     app.run(debug=True)
