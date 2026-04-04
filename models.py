@@ -159,12 +159,13 @@ class Message(db.Model):
     sender_id = db.Column(db.Integer, db.ForeignKey('users.id', ondelete='CASCADE'), nullable=False)
     receiver_id = db.Column(db.Integer, db.ForeignKey('users.id', ondelete='CASCADE'), nullable=False)
     job_id = db.Column(db.Integer, db.ForeignKey('jobs.id', ondelete='SET NULL'), nullable=True)
-    body = db.Column(db.Text, default='')
+    body = db.Column(db.Text, default='', nullable=True)
     attachment_path = db.Column(db.String(500), default='')
     attachment_name = db.Column(db.String(255), default='')
     attachment_type = db.Column(db.String(100), default='')
     read = db.Column(db.Boolean, default=False, nullable=False)
     created_at = db.Column(db.DateTime, nullable=False, default=datetime.now)
+    updated_at = db.Column(db.DateTime, nullable=False, default=datetime.now, onupdate=datetime.now)
 
     def to_dict(self):
         return {

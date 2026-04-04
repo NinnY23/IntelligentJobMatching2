@@ -1,18 +1,6 @@
-import os
-os.environ['DB_URI'] = 'sqlite:///:memory:'
-
-import pytest
-from app import app as flask_app, db
 from models import Message
-
-
-@pytest.fixture
-def app():
-    flask_app.config['TESTING'] = True
-    with flask_app.app_context():
-        db.create_all()
-        yield flask_app
-        db.drop_all()
+from models import User
+from app import db
 
 
 def test_message_model_exists(app):
@@ -29,7 +17,6 @@ def test_message_model_exists(app):
 
 def test_message_defaults(app):
     """Message.to_dict() returns expected keys with defaults."""
-    from models import User
     with app.app_context():
         u1 = User(email='a@b.com', password='x', name='A', role='employee')
         u2 = User(email='c@d.com', password='x', name='B', role='employer')
