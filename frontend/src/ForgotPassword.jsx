@@ -1,6 +1,6 @@
 // src/ForgotPassword.jsx
 import React, { useState } from 'react';
-import './ForgotPassword.css';
+import './components/AuthCard.css';
 
 export default function ForgotPassword({ onSwitchToLogin }) {
   const [email, setEmail] = useState('');
@@ -26,14 +26,14 @@ export default function ForgotPassword({ onSwitchToLogin }) {
       if (!response.ok) {
         const contentType = response.headers.get('content-type');
         let errorMessage = 'Request failed';
-        
+
         if (contentType && contentType.includes('application/json')) {
           const data = await response.json();
           errorMessage = data.message || errorMessage;
         } else {
           errorMessage = `Server error: ${response.status} ${response.statusText}`;
         }
-        
+
         throw new Error(errorMessage);
       }
 
@@ -47,38 +47,36 @@ export default function ForgotPassword({ onSwitchToLogin }) {
   };
 
   return (
-    <div className="forgot-password-container">
-      <div className="forgot-password-box">
-        <h1>Intelligent Job Matching</h1>
-        <h2>Reset Password</h2>
-        
-        <p className="forgot-password-description">
-          Enter your email address and we'll send you a link to reset your password.
-        </p>
+    <div className="auth-page">
+      <div className="auth-card">
+        <div className="auth-logo">JobMatch<span>AI</span></div>
+        <h2 className="auth-title">Reset Password</h2>
+        <p className="auth-subtitle">Enter your email and we'll send you a reset link</p>
 
         <form onSubmit={handleSubmit}>
           <div className="form-group">
-            <label htmlFor="email">Email:</label>
+            <label htmlFor="email">Email</label>
             <input
               id="email"
               type="email"
               value={email}
               onChange={(e) => setEmail(e.target.value)}
-              placeholder="Enter your email address"
+              placeholder="you@example.com"
               required
+              autoComplete="email"
             />
           </div>
 
-          {error && <div className="error-message">{error}</div>}
-          {success && <div className="success-message">{success}</div>}
+          {error && <p className="form-error" role="alert">{error}</p>}
+          {success && <p className="form-error" style={{ color: 'var(--color-success, #16a34a)', background: 'var(--color-success-light, #f0fdf4)' }} role="status">{success}</p>}
 
-          <button type="submit" disabled={loading} className="reset-btn">
+          <button type="submit" disabled={loading} className="btn-primary auth-submit">
             {loading ? 'Sending...' : 'Send Reset Link'}
           </button>
         </form>
 
-        <div className="forgot-password-footer">
-          <p>Remember your password? <a href="#login" onClick={onSwitchToLogin}>Login</a></p>
+        <div className="auth-footer">
+          <button onClick={onSwitchToLogin}>Back to Sign In</button>
         </div>
       </div>
     </div>

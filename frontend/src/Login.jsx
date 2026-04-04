@@ -1,6 +1,5 @@
-// src/Login.jsx
 import React, { useState } from 'react';
-import './Login.css';
+import './components/AuthCard.css';
 
 export default function Login({ onLoginSuccess, onSwitchToSignUp, onSwitchToForgotPassword }) {
   const [email, setEmail] = useState('');
@@ -8,86 +7,68 @@ export default function Login({ onLoginSuccess, onSwitchToSignUp, onSwitchToForg
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
 
-  const handleSubmit = async (e) => {
+  async function handleSubmit(e) {
     e.preventDefault();
     setError('');
     setLoading(true);
-
     try {
-      const response = await fetch('http://localhost:5000/api/login', {
+      const res = await fetch('/api/login', {
         method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({ email, password }),
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email, password })
       });
-
-      if (!response.ok) {
-        const contentType = response.headers.get('content-type');
-        let errorMessage = 'Invalid email or password';
-        
-        if (contentType && contentType.includes('application/json')) {
-          const data = await response.json();
-          errorMessage = data.message || errorMessage;
-        } else {
-          errorMessage = `Server error: ${response.status} ${response.statusText}`;
-        }
-        
-        throw new Error(errorMessage);
-      }
-
-      const data = await response.json();
+      const data = await res.json();
+      if (!res.ok) { setError(data.message || 'Login failed'); return; }
       localStorage.setItem('token', data.token);
       localStorage.setItem('user', JSON.stringify(data.user));
       onLoginSuccess(data.user);
-    } catch (err) {
-      setError(err.message || 'Login failed. Please try again.');
+    } catch {
+      setError('Network error. Please try again.');
     } finally {
       setLoading(false);
     }
-  };
+  }
 
   return (
-    <div className="login-container">
-      <div className="login-box">
-        <h1>Intelligent Job Matching</h1>
-        <h2>Login</h2>
-        
+    <div className="auth-page">
+      <div className="auth-card">
+        <div className="auth-logo">JobMatch<span>AI</span></div>
+        <h2 className="auth-title">Welcome back</h2>
+        <p className="auth-subtitle">Sign in to your account</p>
         <form onSubmit={handleSubmit}>
           <div className="form-group">
-            <label htmlFor="email">Email:</label>
+            <label htmlFor="login-email">Email</label>
             <input
-              id="email"
+              id="login-email"
               type="email"
               value={email}
-              onChange={(e) => setEmail(e.target.value)}
-              placeholder="Enter your email"
+              onChange={e => setEmail(e.target.value)}
+              placeholder="you@example.com"
               required
+              autoComplete="email"
             />
           </div>
-
           <div className="form-group">
-            <label htmlFor="password">Password:</label>
+            <label htmlFor="login-password">Password</label>
             <input
-              id="password"
+              id="login-password"
               type="password"
               value={password}
-              onChange={(e) => setPassword(e.target.value)}
-              placeholder="Enter your password"
+              onChange={e => setPassword(e.target.value)}
+              placeholder="••••••••"
               required
+              autoComplete="current-password"
             />
           </div>
-
-          {error && <div className="error-message">{error}</div>}
-
-          <button type="submit" disabled={loading} className="login-btn">
-            {loading ? 'Logging in...' : 'Login'}
+          {error && <p className="form-error" role="alert">{error}</p>}
+          <button type="submit" className="btn-primary auth-submit" disabled={loading}>
+            {loading ? 'Signing in…' : 'Sign In'}
           </button>
         </form>
-
-        <div className="login-footer">
-          <p>Don't have an account? <a href="#signup" onClick={onSwitchToSignUp}>Sign up</a></p>
-          <p><a href="#forgot" onClick={onSwitchToForgotPassword}>Forgot password?</a></p>
+        <div className="auth-footer">
+          <button onClick={onSwitchToForgotPassword}>Forgot password?</button>
+          &nbsp;·&nbsp;
+          <button onClick={onSwitchToSignUp}>Create account</button>
         </div>
       </div>
     </div>
