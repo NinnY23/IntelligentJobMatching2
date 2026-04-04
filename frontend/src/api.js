@@ -1,4 +1,14 @@
 // src/api.js
+function handleAuthError(res) {
+  if (res.status === 401) {
+    localStorage.removeItem('token');
+    localStorage.removeItem('user');
+    window.location.href = '/login';
+    throw new Error('Session expired. Please log in again.');
+  }
+  return res;
+}
+
 export async function loginUser(email, password) {
   const res = await fetch('/api/login', {
     method: 'POST',
@@ -7,11 +17,11 @@ export async function loginUser(email, password) {
     },
     body: JSON.stringify({ email, password }),
   });
-  
+
   if (!res.ok) {
     throw new Error('Login failed');
   }
-  
+
   return res.json();
 }
 
@@ -20,6 +30,7 @@ export async function fetchJobPosts() {
   const res = await fetch('/api/job-posts', {
     headers: { 'Authorization': `Bearer ${token}` },
   });
+  handleAuthError(res);
   return res.json();
 }
 
@@ -28,6 +39,7 @@ export async function fetchJobMatches() {
   const res = await fetch('/api/jobs/matches', {
     headers: { 'Authorization': `Bearer ${token}` },
   });
+  handleAuthError(res);
   return res.json();
 }
 
@@ -43,11 +55,12 @@ export async function getProfile() {
       'Authorization': `Bearer ${token}`,
     },
   });
-  
+  handleAuthError(res);
+
   if (!res.ok) {
     throw new Error('Failed to fetch profile');
   }
-  
+
   return res.json();
 }
 
@@ -61,6 +74,7 @@ export async function updateProfile(profileData) {
     },
     body: JSON.stringify(profileData),
   });
+  handleAuthError(res);
 
   if (!res.ok) {
     throw new Error('Failed to update profile');
@@ -75,6 +89,7 @@ export async function applyForJob(jobId) {
     method: 'POST',
     headers: { 'Authorization': `Bearer ${token}` },
   });
+  handleAuthError(res);
   if (!res.ok) {
     const err = new Error(res.status === 409 ? 'Already applied' : 'Failed to apply');
     err.status = res.status;
@@ -90,6 +105,7 @@ export async function fetchMyApplications() {
       'Authorization': `Bearer ${token}`,
     },
   });
+  handleAuthError(res);
 
   if (!res.ok) {
     throw new Error('Failed to fetch applications');
@@ -106,6 +122,7 @@ export async function withdrawApplication(appId) {
       'Authorization': `Bearer ${token}`,
     },
   });
+  handleAuthError(res);
 
   if (!res.ok) {
     throw new Error('Failed to withdraw application');
@@ -122,6 +139,7 @@ export async function updateJobPost(jobId, data) {
     },
     body: JSON.stringify(data),
   });
+  handleAuthError(res);
   return { ok: res.ok, data: await res.json() };
 }
 
@@ -131,6 +149,7 @@ export async function deleteJobPost(jobId) {
     method: 'DELETE',
     headers: { 'Authorization': `Bearer ${token}` },
   });
+  handleAuthError(res);
   return { ok: res.ok, data: await res.json() };
 }
 
@@ -139,6 +158,7 @@ export async function fetchJobApplicants(jobId) {
   const res = await fetch(`/api/job-posts/${jobId}/applicants`, {
     headers: { 'Authorization': `Bearer ${token}` },
   });
+  handleAuthError(res);
   if (!res.ok) throw new Error('Failed to fetch applicants');
   return res.json();
 }
@@ -153,6 +173,7 @@ export async function updateApplicationStatus(appId, status) {
     },
     body: JSON.stringify({ status }),
   });
+  handleAuthError(res);
   return { ok: res.ok, data: await res.json() };
 }
 
@@ -161,6 +182,7 @@ export async function fetchEmployerDashboard() {
   const res = await fetch('/api/employer/dashboard', {
     headers: { 'Authorization': `Bearer ${token}` },
   });
+  handleAuthError(res);
   if (!res.ok) throw new Error('Failed to fetch dashboard');
   return res.json();
 }
@@ -170,6 +192,7 @@ export async function fetchConversations() {
   const res = await fetch('/api/messages', {
     headers: { 'Authorization': `Bearer ${token}` }
   });
+  handleAuthError(res);
   if (!res.ok) throw new Error('Failed to fetch conversations');
   return res.json();
 }
@@ -182,6 +205,7 @@ export async function fetchThread(userId, after = null) {
   const res = await fetch(url, {
     headers: { 'Authorization': `Bearer ${token}` }
   });
+  handleAuthError(res);
   if (!res.ok) throw new Error('Failed to fetch messages');
   return res.json();
 }
@@ -196,15 +220,17 @@ export async function sendMessage(userId, body, attachmentFile = null) {
     headers: { 'Authorization': `Bearer ${token}` },
     body: formData
   });
+  handleAuthError(res);
   return { ok: res.ok, status: res.status, data: await res.json() };
 }
 
 export async function markThreadRead(userId) {
   const token = localStorage.getItem('token');
-  await fetch(`/api/messages/${userId}/read`, {
+  const res = await fetch(`/api/messages/${userId}/read`, {
     method: 'PATCH',
     headers: { 'Authorization': `Bearer ${token}` }
   });
+  handleAuthError(res);
 }
 
 export async function fetchUnreadCount() {
@@ -212,6 +238,7 @@ export async function fetchUnreadCount() {
   const res = await fetch('/api/messages', {
     headers: { 'Authorization': `Bearer ${token}` }
   });
+  handleAuthError(res);
   if (!res.ok) return 0;
   const convos = await res.json();
   return convos.reduce((sum, c) => sum + (c.unread_count || 0), 0);

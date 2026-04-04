@@ -14,6 +14,7 @@ import Applicants from './pages/Applicants';
 import Dashboard from './pages/Dashboard';
 import Messages from './pages/Messages';
 import Navbar from './components/Navbar';
+import ErrorBoundary from './components/ErrorBoundary';
 import { fetchUnreadCount } from './api';
 
 function DashboardWrapper({ user }) {
@@ -139,8 +140,10 @@ function AppContent() {
 
 export default function App() {
   return (
-    <Router>
-      <AppContent />
-    </Router>
+    <ErrorBoundary>
+      <Router>
+        <AppContent />
+      </Router>
+    </ErrorBoundary>
   );
 }
