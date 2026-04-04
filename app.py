@@ -434,9 +434,21 @@ def upload_resume():
         existing_skills = user.get_skills_list()
         all_skills = list(set(existing_skills + extracted_skills))
         user.set_skills_list(all_skills)
-        
+
+        # Auto-populate empty profile fields from resume
+        fields_populated = 0
+        if extracted_name and not user.name.strip():
+            user.name = extracted_name
+            fields_populated += 1
+        if extracted_phone and not user.phone.strip():
+            user.phone = str(extracted_phone)
+            fields_populated += 1
+        if extracted_education and not user.education.strip():
+            user.education = '; '.join(extracted_education)
+            fields_populated += 1
+
         db.session.commit()
-        
+
         return jsonify({
             "message": "Resume parsed successfully",
             "resume_data": {
@@ -447,6 +459,7 @@ def upload_resume():
                 "education": extracted_education
             },
             "extracted_skills": extracted_skills,
+            "fields_populated": fields_populated,
             "user": user.to_dict()
         }), 200
     except Exception as e:
@@ -477,9 +490,21 @@ def parse_resume_text():
         existing_skills = user.get_skills_list()
         all_skills = list(set(existing_skills + extracted_skills))
         user.set_skills_list(all_skills)
-        
+
+        # Auto-populate empty profile fields from resume
+        fields_populated = 0
+        if extracted_name and not user.name.strip():
+            user.name = extracted_name
+            fields_populated += 1
+        if extracted_phone and not user.phone.strip():
+            user.phone = str(extracted_phone)
+            fields_populated += 1
+        if extracted_education and not user.education.strip():
+            user.education = '; '.join(extracted_education)
+            fields_populated += 1
+
         db.session.commit()
-        
+
         return jsonify({
             "message": "Resume text parsed successfully",
             "resume_data": {
@@ -490,6 +515,7 @@ def parse_resume_text():
                 "education": extracted_education
             },
             "extracted_skills": extracted_skills,
+            "fields_populated": fields_populated,
             "user": user.to_dict()
         }), 200
     except Exception as e:

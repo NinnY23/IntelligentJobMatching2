@@ -25,6 +25,9 @@ export default function Profile({ user, onUpdateProfile, onBack }) {
   const [success, setSuccess] = useState('');
   const [loading, setLoading] = useState(false);
 
+  const [resumeText, setResumeText] = useState('');
+  const [resumeLoading, setResumeLoading] = useState(false);
+
   const handleInputChange = (e) => {
     const { name, value } = e.target;
     setFormData((prev) => ({ ...prev, [name]: value }));
@@ -80,6 +83,54 @@ export default function Profile({ user, onUpdateProfile, onBack }) {
       setError(err.message || 'Failed to update profile. Please try again.');
     } finally {
       setLoading(false);
+    }
+  };
+
+  const handleParseResume = async () => {
+    if (!resumeText.trim()) return;
+    setResumeLoading(true);
+    setError('');
+    setSuccess('');
+    try {
+      const token = localStorage.getItem('token');
+      const response = await fetch('http://localhost:5000/api/parse-resume-text', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`,
+        },
+        body: JSON.stringify({ resumeText }),
+      });
+      const data = await response.json();
+      if (!response.ok) {
+        throw new Error(data.message || 'Failed to parse resume');
+      }
+
+      // Refresh form fields from populated profile
+      const updatedUser = data.user;
+      setFormData({
+        name: updatedUser.name || '',
+        email: updatedUser.email || '',
+        phone: updatedUser.phone || '',
+        location: updatedUser.location || '',
+        bio: updatedUser.bio || '',
+        profilePicture: updatedUser.profilePicture || '',
+        education: updatedUser.education || '',
+        experience: updatedUser.experience || '',
+      });
+      if (updatedUser.skills) {
+        setSkills(updatedUser.skills.split(',').map(s => s.trim()).filter(Boolean));
+      }
+      localStorage.setItem('user', JSON.stringify(updatedUser));
+      onUpdateProfile(updatedUser);
+
+      const populated = data.fields_populated || 0;
+      setSuccess(`Resume parsed! ${data.extracted_skills.length} skills found.${populated > 0 ? ` ${populated} profile field(s) auto-populated.` : ''}`);
+      setResumeText('');
+    } catch (err) {
+      setError(err.message || 'Failed to parse resume. Please try again.');
+    } finally {
+      setResumeLoading(false);
     }
   };
 
@@ -194,6 +245,28 @@ export default function Profile({ user, onUpdateProfile, onBack }) {
                   />
                 </div>
               </>
+            )}
+
+            {user?.role === 'employee' && (
+              <div className="form-group full-width">
+                <div className="skills-section">
+                  <h4>Import from Resume</h4>
+                  <textarea
+                    value={resumeText}
+                    onChange={(e) => setResumeText(e.target.value)}
+                    placeholder="Paste your resume text here to auto-populate skills and profile fields…"
+                    rows="5"
+                  />
+                  <button
+                    type="button"
+                    className="btn-primary"
+                    onClick={handleParseResume}
+                    disabled={resumeLoading || !resumeText.trim()}
+                  >
+                    {resumeLoading ? 'Parsing…' : 'Parse Resume'}
+                  </button>
+                </div>
+              </div>
             )}
 
             <div className="form-group full-width">

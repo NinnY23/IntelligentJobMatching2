@@ -34,3 +34,26 @@ def test_profile_get_returns_education_experience(client, seeker_token):
     user = res.get_json()['user']
     assert user['education'] == 'Masters in AI'
     assert user['experience'] == '3 years at StartupX'
+
+
+def test_resume_text_populates_profile_fields(client, seeker_token):
+    """Resume parsing should populate empty profile fields, not just skills."""
+    res = client.post('/api/parse-resume-text', json={
+        'resumeText': '''John Smith
+john@example.com
++1-555-123-4567
+Bachelor of Science in Computer Science from KMITL
+3 years experience in Python, Flask, React development
+Skills: Python, JavaScript, React, Flask, SQL'''
+    }, headers={'Authorization': f'Bearer {seeker_token}'})
+
+    assert res.status_code == 200
+    data = res.get_json()
+    assert 'fields_populated' in data
+
+    # Verify profile was updated
+    profile_res = client.get('/api/profile',
+                             headers={'Authorization': f'Bearer {seeker_token}'})
+    profile = profile_res.get_json()['user']
+    # Skills should be populated
+    assert len(profile['skills']) > 0
