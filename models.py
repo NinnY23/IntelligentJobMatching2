@@ -63,7 +63,8 @@ class Job(db.Model):
     company = db.Column(db.String(120), nullable=False)
     location = db.Column(db.String(120), nullable=False)
     description = db.Column(db.Text, nullable=False)
-    skills = db.Column(db.Text, default='')  # Stored as comma-separated string
+    required_skills = db.Column(db.Text, default='')   # was: skills
+    preferred_skills = db.Column(db.Text, default='')  # new column
     salary_min = db.Column(db.String(50), default='')
     salary_max = db.Column(db.String(50), default='')
     job_type = db.Column(db.String(50), default='Full-time')
@@ -72,37 +73,42 @@ class Job(db.Model):
     applicants = db.Column(db.Integer, default=0)
     created_at = db.Column(db.DateTime, nullable=False, default=datetime.now)
     updated_at = db.Column(db.DateTime, nullable=False, default=datetime.now, onupdate=datetime.now)
-    
+
     def to_dict(self):
-        """Convert job to dictionary for JSON serialization."""
         return {
             'id': self.id,
+            'employer_id': self.employer_id,
             'position': self.position,
             'company': self.company,
             'location': self.location,
             'description': self.description,
-            'skills': self.skills,
+            'required_skills': self.required_skills,
+            'preferred_skills': self.preferred_skills,
             'salary_min': self.salary_min,
             'salary_max': self.salary_max,
             'job_type': self.job_type,
             'openings': self.openings,
             'deadline': self.deadline,
             'applicants': self.applicants,
-            'created_at': self.created_at.isoformat() if self.created_at else '',
-            'employer_email': self.employer.email if self.employer else '',
-            'employer_id': self.employer_id
+            'created_at': self.created_at.isoformat() if self.created_at else None,
+            'updated_at': self.updated_at.isoformat() if self.updated_at else None,
         }
-    
+
     def get_skills_list(self):
-        """Get skills as a list."""
-        if not self.skills:
+        """Return required_skills as a Python list."""
+        if not self.required_skills:
             return []
-        return [skill.strip() for skill in self.skills.split(',') if skill.strip()]
-    
+        return [s.strip() for s in self.required_skills.split(',') if s.strip()]
+
     def set_skills_list(self, skills_list):
-        """Set skills from a list, removing duplicates."""
+        """Accept a list or comma string and store in required_skills."""
         if isinstance(skills_list, list):
-            unique_skills = list(set(skills_list))
-            self.skills = ', '.join(unique_skills)
+            self.required_skills = ', '.join(list(set(skills_list)))
         else:
-            self.skills = skills_list
+            self.required_skills = skills_list
+
+    def get_preferred_skills_list(self):
+        """Return preferred_skills as a Python list."""
+        if not self.preferred_skills:
+            return []
+        return [s.strip() for s in self.preferred_skills.split(',') if s.strip()]

@@ -91,35 +91,38 @@ def seed_database():
                 company='Tech Company',
                 location='Austin, TX',
                 description='Looking for experienced Python developers to join our team.',
-                skills='Python, Django, PostgreSQL, AWS',
+                required_skills='Python, Django, PostgreSQL, AWS',
+                preferred_skills='',
                 salary_min='100000',
                 salary_max='150000',
                 job_type='Full-time',
                 openings=3,
                 deadline='2026-05-31'
             )
-            
+
             job2 = Job(
                 employer_id=user3.id,
                 position='React Frontend Engineer',
                 company='Tech Company',
                 location='Austin, TX',
                 description='Build responsive web applications using React.',
-                skills='JavaScript, React, HTML, CSS',
+                required_skills='JavaScript, React, HTML, CSS',
+                preferred_skills='',
                 salary_min='90000',
                 salary_max='130000',
                 job_type='Full-time',
                 openings=2,
                 deadline='2026-05-31'
             )
-            
+
             job3 = Job(
                 employer_id=user3.id,
                 position='Data Scientist',
                 company='Tech Company',
                 location='Austin, TX',
                 description='Work on ML models and data analysis projects.',
-                skills='Python, Machine Learning, SQL, TensorFlow',
+                required_skills='Python, Machine Learning, SQL, TensorFlow',
+                preferred_skills='',
                 salary_min='110000',
                 salary_max='160000',
                 job_type='Full-time',

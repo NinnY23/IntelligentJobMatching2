@@ -530,6 +530,9 @@ def create_job_post():
         if not data.get('position') or not data.get('company') or not data.get('location') or not data.get('description'):
             return jsonify({"message": "Missing required fields"}), 400
         
+        required_skills = data.get('required_skills', data.get('skills', ''))
+        preferred_skills = data.get('preferred_skills', '')
+
         # Create new job post
         job_post = Job(
             employer_id=employer.id,
@@ -537,7 +540,8 @@ def create_job_post():
             company=data.get('company'),
             location=data.get('location'),
             description=data.get('description'),
-            skills=data.get('skills', ''),
+            required_skills=required_skills,
+            preferred_skills=preferred_skills,
             salary_min=data.get('salaryMin', ''),
             salary_max=data.get('salaryMax', ''),
             job_type=data.get('type', 'Full-time'),
