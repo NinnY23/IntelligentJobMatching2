@@ -1,6 +1,6 @@
 // src/App.jsx
 import React, { useState, useEffect } from 'react';
-import { BrowserRouter as Router, Routes, Route, Navigate, useNavigate } from 'react-router-dom';
+import { BrowserRouter as Router, Routes, Route, Navigate, useNavigate, useParams } from 'react-router-dom';
 import CreateJobPost from './CreateJobPost';
 import Profile from './Profile';
 import Login from './Login';
@@ -8,6 +8,9 @@ import SignUp from './SignUp';
 import ForgotPassword from './ForgotPassword';
 import Jobs from './pages/Jobs';
 import Applications from './pages/Applications';
+import MyJobs from './pages/MyJobs';
+import Applicants from './pages/Applicants';
+import Dashboard from './pages/Dashboard';
 import './App.css';
 
 function Header({ user, currentPage, onLogout, navigate }) {
@@ -15,34 +18,59 @@ function Header({ user, currentPage, onLogout, navigate }) {
     <header>
       <h1>Intelligent Job Matching</h1>
       <div className="nav-links">
-        <button
-          className={`nav-link ${currentPage === 'jobs' ? 'active' : ''}`}
-          onClick={() => navigate('/jobs')}
-        >
-          Browse Jobs
-        </button>
-        {user?.role === 'employee' && (
-          <button
-            className={`nav-link ${currentPage === 'applications' ? 'active' : ''}`}
-            onClick={() => navigate('/applications')}
-          >
-            My Applications
-          </button>
+        {/* Employee navigation */}
+        {user && user.role === 'employee' && (
+          <>
+            <button
+              className={`nav-link ${currentPage === 'jobs' ? 'active' : ''}`}
+              onClick={() => navigate('/jobs')}
+            >
+              Find Jobs
+            </button>
+            <button
+              className={`nav-link ${currentPage === 'applications' ? 'active' : ''}`}
+              onClick={() => navigate('/applications')}
+            >
+              My Applications
+            </button>
+            <button
+              className={`nav-link ${currentPage === 'profile' ? 'active' : ''}`}
+              onClick={() => navigate('/profile')}
+            >
+              Profile
+            </button>
+          </>
         )}
-        {user?.role === 'employer' && (
-          <button
-            className={`nav-link ${currentPage === 'create-job' ? 'active' : ''}`}
-            onClick={() => navigate('/create-job')}
-          >
-            Post a Job
-          </button>
+
+        {/* Employer navigation */}
+        {user && user.role === 'employer' && (
+          <>
+            <button
+              className={`nav-link ${currentPage === 'dashboard' ? 'active' : ''}`}
+              onClick={() => navigate('/dashboard')}
+            >
+              Dashboard
+            </button>
+            <button
+              className={`nav-link ${currentPage === 'my-jobs' ? 'active' : ''}`}
+              onClick={() => navigate('/my-jobs')}
+            >
+              My Jobs
+            </button>
+            <button
+              className={`nav-link ${currentPage === 'create-job' ? 'active' : ''}`}
+              onClick={() => navigate('/create-job')}
+            >
+              Post a Job
+            </button>
+            <button
+              className={`nav-link ${currentPage === 'profile' ? 'active' : ''}`}
+              onClick={() => navigate('/profile')}
+            >
+              Profile
+            </button>
+          </>
         )}
-        <button
-          className={`nav-link ${currentPage === 'profile' ? 'active' : ''}`}
-          onClick={() => navigate('/profile')}
-        >
-          Profile
-        </button>
       </div>
       <div className="user-info">
         <span>Welcome, {user.name || user.email}</span>
@@ -50,6 +78,21 @@ function Header({ user, currentPage, onLogout, navigate }) {
       </div>
     </header>
   );
+}
+
+function DashboardWrapper({ user }) {
+  const navigate = useNavigate();
+  return <Dashboard navigate={navigate} user={user} />;
+}
+
+function MyJobsWrapper({ user }) {
+  const navigate = useNavigate();
+  return <MyJobs user={user} navigate={navigate} />;
+}
+
+function ApplicantsWrapper() {
+  const { jobId } = useParams();
+  return <Applicants jobId={jobId} />;
 }
 
 function AppContent() {
@@ -77,12 +120,20 @@ function AppContent() {
 
   const handleLoginSuccess = (userData) => {
     setUser(userData);
-    navigate('/jobs');
+    if (userData.role === 'employer') {
+      navigate('/dashboard');
+    } else {
+      navigate('/jobs');
+    }
   };
 
   const handleSignUpSuccess = (userData) => {
     setUser(userData);
-    navigate('/jobs');
+    if (userData.role === 'employer') {
+      navigate('/dashboard');
+    } else {
+      navigate('/jobs');
+    }
   };
 
   const handleUpdateProfile = (updatedUser) => {
@@ -140,7 +191,25 @@ function AppContent() {
             <Profile user={user} onUpdateProfile={handleUpdateProfile} onBack={() => navigate('/jobs')} />
           </>
         } />
-        <Route path="*" element={<Navigate to="/jobs" replace />} />
+        <Route path="/dashboard" element={
+          <>
+            <Header user={user} currentPage="dashboard" onLogout={handleLogout} navigate={navigate} />
+            <DashboardWrapper user={user} />
+          </>
+        } />
+        <Route path="/my-jobs" element={
+          <>
+            <Header user={user} currentPage="my-jobs" onLogout={handleLogout} navigate={navigate} />
+            <MyJobsWrapper user={user} />
+          </>
+        } />
+        <Route path="/jobs/:jobId/applicants" element={
+          <>
+            <Header user={user} currentPage="applicants" onLogout={handleLogout} navigate={navigate} />
+            <ApplicantsWrapper />
+          </>
+        } />
+        <Route path="*" element={<Navigate to={user.role === 'employer' ? '/dashboard' : '/jobs'} replace />} />
       </Routes>
     </>
   );
