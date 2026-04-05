@@ -1,50 +1,50 @@
 // src/SignUp.jsx
-import React, { useState } from 'react';
-import './components/AuthCard.css';
+import React, { useState } from "react";
+import "./components/AuthCard.css";
 
 export default function SignUp({ onSignUpSuccess, onSwitchToLogin }) {
-  const [name, setName] = useState('');
-  const [email, setEmail] = useState('');
-  const [password, setPassword] = useState('');
-  const [confirmPassword, setConfirmPassword] = useState('');
-  const [role, setRole] = useState('employee');
-  const [error, setError] = useState('');
+  const [name, setName] = useState("");
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
+  const [confirmPassword, setConfirmPassword] = useState("");
+  const [role, setRole] = useState("employee");
+  const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    setError('');
+    setError("");
 
     // Validate passwords match
     if (password !== confirmPassword) {
-      setError('Passwords do not match');
+      setError("Passwords do not match");
       return;
     }
 
     // Validate password strength
     if (password.length < 6) {
-      setError('Password must be at least 6 characters');
+      setError("Password must be at least 6 characters");
       return;
     }
 
     setLoading(true);
 
     try {
-      const response = await fetch('/api/signup', {
-        method: 'POST',
+      const response = await fetch("/api/signup", {
+        method: "POST",
         headers: {
-          'Content-Type': 'application/json',
+          "Content-Type": "application/json",
         },
         body: JSON.stringify({ name, email, password, role }),
       });
 
       if (!response.ok) {
-        const contentType = response.headers.get('content-type');
-        let errorMessage = 'Signup failed';
+        const contentType = response.headers.get("content-type");
+        let errorMessage = "Signup failed";
 
-        if (contentType && contentType.includes('application/json')) {
+        if (contentType && contentType.includes("application/json")) {
           const data = await response.json();
-          errorMessage = data.message || 'Signup failed';
+          errorMessage = data.message || "Signup failed";
         } else {
           errorMessage = `Server error: ${response.status} ${response.statusText}`;
         }
@@ -53,11 +53,11 @@ export default function SignUp({ onSignUpSuccess, onSwitchToLogin }) {
       }
 
       const data = await response.json();
-      localStorage.setItem('token', data.token);
-      localStorage.setItem('user', JSON.stringify(data.user));
+      localStorage.setItem("token", data.token);
+      localStorage.setItem("user", JSON.stringify(data.user));
       onSignUpSuccess(data.user);
     } catch (err) {
-      setError(err.message || 'Signup failed. Please try again.');
+      setError(err.message || "Signup failed. Please try again.");
     } finally {
       setLoading(false);
     }
@@ -66,9 +66,9 @@ export default function SignUp({ onSignUpSuccess, onSwitchToLogin }) {
   return (
     <div className="auth-page">
       <div className="auth-card">
-        <div className="auth-logo">JobMatch<span>AI</span></div>
+        <div className="auth-logo">IJM</div>
         <h2 className="auth-title">Create account</h2>
-        <p className="auth-subtitle">Join JobMatchAI today</p>
+        <p className="auth-subtitle">Join IJM today</p>
 
         <form onSubmit={handleSubmit}>
           <div className="form-group">
@@ -129,22 +129,39 @@ export default function SignUp({ onSignUpSuccess, onSwitchToLogin }) {
               id="role"
               value={role}
               onChange={(e) => setRole(e.target.value)}
-              style={{ width: '100%', padding: '10px 12px', borderRadius: '8px', border: '1.5px solid var(--color-border)', fontSize: '14px', fontFamily: 'var(--font)' }}
+              style={{
+                width: "100%",
+                padding: "10px 12px",
+                borderRadius: "8px",
+                border: "1.5px solid var(--color-border)",
+                fontSize: "14px",
+                fontFamily: "var(--font)",
+              }}
             >
               <option value="employee">Job Seeker</option>
               <option value="employer">Employer</option>
             </select>
           </div>
 
-          {error && <p className="form-error" role="alert">{error}</p>}
+          {error && (
+            <p className="form-error" role="alert">
+              {error}
+            </p>
+          )}
 
-          <button type="submit" disabled={loading} className="btn-primary auth-submit">
-            {loading ? 'Creating Account...' : 'Create Account'}
+          <button
+            type="submit"
+            disabled={loading}
+            className="btn-primary auth-submit"
+          >
+            {loading ? "Creating Account..." : "Create Account"}
           </button>
         </form>
 
         <div className="auth-footer">
-          <button onClick={onSwitchToLogin}>Already have an account? Sign in</button>
+          <button onClick={onSwitchToLogin}>
+            Already have an account? Sign in
+          </button>
         </div>
       </div>
     </div>
